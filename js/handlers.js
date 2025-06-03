@@ -2,8 +2,6 @@
 import { ui } from './ui.js';
 import { calculadora } from './calculadora.js';
 import { configManager } from './config.js';
-// persistencia é importada em ui.js para os botões do header,
-// mas se o reset precisar explicitamente, pode ser importado aqui também.
 
 export const handlers = {
     handleAddServico() {
@@ -16,22 +14,19 @@ export const handlers = {
             alert("Por favor, selecione um serviço para adicionar.");
         }
     },
-
     handleSearch() {
         const termoPesquisa = document.getElementById('inputPesquisaServico').value;
         calculadora.renderizarItens(termoPesquisa);
     },
-
     handleResetApplication() {
         if (confirm("Tem certeza que deseja resetar TODA a aplicação? Isso inclui configurações e itens da calculadora. Esta ação não pode ser desfeita.")) {
             try {
-                // localStorage.removeItem('orcamentoConfig'); // configManager.resetToDefaults lida com a lógica de config
-                // localStorage.removeItem('orcamentoItens'); // Se houver persistência de itens separados
-                
+                localStorage.removeItem('orcamentoConfig'); 
+                // Se você salvava itens da calculadora no localStorage separadamente, limpe aqui também.
+                // localStorage.removeItem('orcamentoItens'); 
                 configManager.resetToDefaults();
                 calculadora.resetCalculadora();
-                ui.resetUI(); // resetUI deve ser abrangente
-                
+                ui.resetUI();
                 alert('Aplicação resetada para os padrões.');
             } catch (error) {
                 console.error("Erro ao resetar aplicação:", error);

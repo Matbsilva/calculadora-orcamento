@@ -31,7 +31,6 @@ export const persistencia = {
             alert('Erro ao tentar salvar o orçamento. Verifique o console.');
         }
     },
-
     loadBudget(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -44,11 +43,11 @@ export const persistencia = {
                 }
                 event.target.value = null;
                 if (confirm("Deseja carregar este orçamento? Todas as alterações não salvas serão perdidas.")) {
-                    const defaultConfig = configManager.config;
+                    const defaultConfig = configManager.config; // Pega a estrutura padrão atual
                     const loadedConfig = budgetData.config;
-                    configManager.config = { ...defaultConfig, ...loadedConfig };
+                    configManager.config = { ...defaultConfig, ...loadedConfig }; // Mescla, priorizando o carregado
                     calculadora.setItens(budgetData.itensCalculadora);
-                    ui.resetUI();
+                    ui.resetUI(); // Isso deve chamar updateUI de config e calculadora, e updateAllTabs
                     alert('Orçamento carregado com sucesso!');
                 }
             } catch (error) {
