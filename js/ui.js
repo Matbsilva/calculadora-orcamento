@@ -1,25 +1,24 @@
 // js/ui.js
-// ALTERAÇÃO: Simplificando importações de data.js, pois getConfig() nos dará o estado necessário.
-// As importações diretas de laborCosts, materialPrices, bdiData não são mais necessárias
-// se as funções de UI usarem getConfig() para obter esses dados.
-// budgetDataStructure e updateItemQuantityInStructure podem ser mantidas se ui.js as manipula diretamente.
-import { getConfig, setConfigValue, budgetDataStructure, updateItemQuantityInStructure, getMateriaisBase } from './data.js';
-// Se formatCurrency estiver em calculadora.js, mantenha a importação ou mova para util.js
-import { formatCurrency } from './calculadora.js'; // Ou './util.js' se movida
+import { getConfig, budgetDataStructure } from './data.js'; // Removidas importações diretas de partes do config
+import { formatCurrency } from './calculadora.js';
 
 
 export function loadConfigDataToUI() {
-    const currentConfig = getConfig(); // Pega a configuração ATUALIZADA
+    const currentConfig = getConfig(); 
 
     // Aba Configurações
-    Object.keys(currentConfig.laborCosts).forEach(key => {
-        const input = document.getElementById(key);
-        if (input) input.value = (currentConfig.laborCosts[key] || 0).toFixed(2);
-    });
-    Object.keys(currentConfig.materialPrices).forEach(key => {
-        const input = document.getElementById(key); // Assumindo que o ID do input é a chave do material
-        if (input) input.value = (currentConfig.materialPrices[key] || 0).toFixed(2);
-    });
+    if (currentConfig.laborCosts) {
+        Object.keys(currentConfig.laborCosts).forEach(key => {
+            const input = document.getElementById(key);
+            if (input) input.value = (currentConfig.laborCosts[key] || 0).toFixed(2);
+        });
+    }
+    if (currentConfig.materialPrices) {
+        Object.keys(currentConfig.materialPrices).forEach(key => {
+            const input = document.getElementById(key); 
+            if (input) input.value = (currentConfig.materialPrices[key] || 0).toFixed(2);
+        });
+    }
 
     if (document.getElementById('bdiFinalAdotado') && currentConfig.bdi) {
         document.getElementById('bdiFinalAdotado').value = (currentConfig.bdi.bdiFinalAdotado || 0).toFixed(2);
@@ -31,9 +30,11 @@ export function loadConfigDataToUI() {
     // Aba Simulação BDI
     if (currentConfig.bdiSimulation) {
         Object.keys(currentConfig.bdiSimulation).forEach(key => {
-            const input = document.getElementById(key); // IDs dos inputs devem bater com as chaves em bdiSimulation
+            const input = document.getElementById(key);
             if (input && typeof currentConfig.bdiSimulation[key] === 'number') {
-                input.value = (currentConfig.bdiSimulation[key] * 100).toFixed(2); // Converte de decimal para %
+                input.value = (currentConfig.bdiSimulation[key] * 100).toFixed(2); 
+            } else if (input) {
+                input.value = "0.00"; // Default se não for número
             }
         });
     }
@@ -61,19 +62,19 @@ export function populateTable(items, tableBodyId = 'budget-table-body') {
         console.error(`Elemento com ID '${tableBodyId}' não encontrado.`);
         return;
     }
-    tableBody.innerHTML = ''; // Limpa a tabela
+    tableBody.innerHTML = ''; 
 
     if (!items || items.length === 0) {
         const row = tableBody.insertRow();
         const cell = row.insertCell();
-        cell.colSpan = 6; // Número de colunas da sua tabela
+        cell.colSpan = 6; 
         cell.textContent = "Nenhum item para exibir.";
         return;
     }
 
-    items.forEach((item) => { // Não precisamos do index se o item já tem ID
+    items.forEach((item) => { 
         const row = tableBody.insertRow();
-        row.insertCell().textContent = item.id || item.refComposition || 'N/A'; // Usa ID, senão refComposition
+        row.insertCell().textContent = item.id || item.refComposition || 'N/A'; 
         row.insertCell().textContent = item.description;
         row.insertCell().textContent = item.unit;
 
@@ -105,6 +106,14 @@ export function showTab(tabId) {
     const tabToShow = document.getElementById(tabId);
     const buttonToActivate = document.querySelector(`nav ul li button[onclick="showTab('${tabId}')"]`);
 
-    if (tabToShow) tabToShow.classList.add('active');
+    if (tabToShow) {
+        tabToShow.classList.add('active');
+        // Se a aba calculadora for ativada, renderizar a tabela
+        if (tabId === 'calculadora') {
+            // Esta importação precisa ser feita aqui ou a função precisa estar neste arquivo ou ser global
+            // Para evitar dependência circular, main.js deve orquestrar isso.
+            // initCalculatorTab(); // Movido para main.js
+        }
+    }
     if (buttonToActivate) buttonToActivate.classList.add('active');
 }

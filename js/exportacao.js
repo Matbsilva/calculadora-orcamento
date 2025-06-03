@@ -1,10 +1,12 @@
 // js/exportacao.js
 import { formatNumber, escapeCsvCell } from './util.js';
-import { getBudgetData, getMateriaisBase, getMaterialPrices } from './data.js';
+// ALTERAÇÃO: Removida importação de getMaterialPrices, usaremos getConfig()
+import { getBudgetData, getMateriaisBase, getConfig } from './data.js';
 
 function aggregateMaterialsForExportInternal() {
     const budgetDataItems = getBudgetData(); 
-    const currentMaterialPrices = getMaterialPrices();
+    // ALTERAÇÃO: Obtendo preços dos materiais a partir do config
+    const currentMaterialPrices = getConfig().materialPrices;
     const currentMateriaisBase = getMateriaisBase();
     let aggregated = {};
     let totalWeight = 0;
@@ -27,7 +29,7 @@ function aggregateMaterialsForExportInternal() {
                         totalAmount: 0,
                         totalWeight: 0,
                         unitWeight: materialBase.pesoKg,
-                        unitPrice: currentMaterialPrices[materialKey] || materialBase.precoUnitarioDefault
+                        unitPrice: currentMaterialPrices[materialKey] != null ? currentMaterialPrices[materialKey] : materialBase.precoUnitarioDefault
                     };
                 }
                 aggregated[materialKey].totalAmount += finalAmount;
@@ -43,7 +45,7 @@ function aggregateMaterialsForExportInternal() {
 }
 
 function downloadCSV(csv, filename) {
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' }); // Adicionado BOM aqui
     const link = document.createElement("a");
     link.setAttribute("href", URL.createObjectURL(blob));
     link.setAttribute("download", filename);
@@ -56,32 +58,32 @@ function downloadCSV(csv, filename) {
 export function exportMaterialsToCSV(detailed = false) {
     const budgetDataItems = getBudgetData();
     const { aggregated } = aggregateMaterialsForExportInternal(); 
-    let csv = "\ufeff"; 
+    let csvRows = [];
     const sep = ';';
     let filename = detailed ? "materiais_detalhada_por_servico.csv" : "materiais_consolidada.csv";
 
     if (detailed) { 
-        csv += `Serviço${sep}Material${sep}Qtd Estimada${sep}Unid.${sep}Peso (kg)\n`;
+        csvRows.push(`Serviço${sep}Material${sep}Qtd Estimada${sep}Unid.${sep}Peso (kg)`);
         let foundAny = false;
         budgetDataItems.forEach((item) => {
             const qty = item.initialQuantity;
             if (qty > 0 && item.detailedMaterials && item.detailedMaterials.length > 0) {
                 foundAny = true;
-                csv += `"${escapeCsvCell(item.description)}"\n`; 
+                csvRows.push(`"${escapeCsvCell(item.description)}"`); 
                 item.detailedMaterials.forEach(mDet => {
                     const mBase = getMateriaisBase()[mDet.idMaterial]; 
                     if (!mBase) return;
                     const amt = mDet.consumptionPerUnit * qty * (1 + (mDet.lossPercent / 100));
                     const finAmt = (mBase.unidade.match(/m²|ml|kg|L|m³|unidade/i)) ? amt : Math.ceil(amt);
                     const w = (mBase.pesoKg && finAmt > 0) ? finAmt * mBase.pesoKg : 0;
-                    csv += ["", 
+                    csvRows.push([ "", 
                            escapeCsvCell(mBase.nomeDisplay),
                            formatNumber(finAmt, mBase.unidade.match(/m²|ml|kg|L|m³/i) ? 2 : 0).replace('.',','),
                            escapeCsvCell(mBase.unidade),
-                           formatNumber(w).replace('.',',')
-                          ].join(sep) + "\n";
+                           formatNumber(w, 2).replace('.',',') // Garante 2 casas para peso
+                          ].join(sep));
                 });
-                csv += "\n"; 
+                csvRows.push(""); // Linha em branco entre serviços
             }
         });
         if (!foundAny) {
@@ -93,22 +95,24 @@ export function exportMaterialsToCSV(detailed = false) {
             alert("Sem materiais consolidados para exportar.");
             return;
         }
-        csv += `Material${sep}Qtd Estimada${sep}Unid.${sep}Peso (kg)\n`;
+        csvRows.push(`Material${sep}Qtd Estimada${sep}Unid.${sep}Peso (kg)`);
         let totalOverallWeight = 0;
         Object.keys(aggregated).sort((a, b) => aggregated[a].nomeDisplay.localeCompare(aggregated[b].nomeDisplay)).forEach(k => {
             const mat = aggregated[k];
-            csv += [
+            csvRows.push([
                 escapeCsvCell(mat.nomeDisplay),
                 formatNumber(mat.totalAmount, mat.unidade.match(/m²|ml|kg|L|m³/i) ? 2 : 0).replace('.',','),
                 escapeCsvCell(mat.unidade),
-                (mat.unitWeight && mat.totalWeight > 0) ? formatNumber(mat.totalWeight).replace('.',',') : "0,00"
-            ].join(sep) + "\n";
+                (mat.unitWeight && mat.totalWeight > 0) ? formatNumber(mat.totalWeight, 2).replace('.',',') : "0,00" // Garante 2 casas para peso
+            ].join(sep));
             if (mat.unitWeight && mat.totalWeight > 0) totalOverallWeight += mat.totalWeight;
         });
-        csv += `\n${sep}${sep}Peso Total Estimado:${sep}${formatNumber(totalOverallWeight).replace('.',',')}\n`;
+        csvRows.push("");
+        csvRows.push(`${sep}${sep}Peso Total Estimado:${sep}${formatNumber(totalOverallWeight, 2).replace('.',',')}`);
     }
-
-    downloadCSV(csv, filename);
+    
+    const csvString = csvRows.join("\n");
+    downloadCSV(csvString, filename);
 }
 
 export function exportMaterialsByServiceToCSV() { 

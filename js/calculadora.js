@@ -1,8 +1,7 @@
 // js/calculadora.js
-import { validateNumberInput } from './util.js';
+import { validateNumberInput, debounce } from './util.js';
 import { updateInputValidationUI, populateTable } from './ui.js';
 import { budgetDataStructure, updateItemQuantityInStructure, calculateAllSubtotalsAndTotal, getFilteredItems } from './data.js';
-import { debounce } from './util.js';
 
 
 export function formatCurrency(value) {
@@ -12,57 +11,50 @@ export function formatCurrency(value) {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-
-function renderBudgetTable(itemsToRender) {
-    populateTable(itemsToRender || budgetDataStructure); // Usa items filtrados se fornecidos, senão todos
-    // Re-setup dos listeners é crucial se populateTable recria os inputs
-    // ou garantir que populateTable não remova os listeners se eles estiverem no tableBody
-    // A abordagem com event delegation no tableBody é mais robusta.
+function renderBudgetTable(searchTerm) {
+    const itemsToRender = getFilteredItems(searchTerm);
+    populateTable(itemsToRender); 
+    // Os event listeners para os inputs de quantidade são delegados no tableBody em setupCalculatorEventListeners
+    // e não precisam ser re-adicionados a cada renderização da tabela.
 }
-
 
 export function setupCalculatorEventListeners() {
     const tableBody = document.getElementById('budget-table-body');
     if (!tableBody) return;
 
-    // Event delegation para inputs de quantidade
     tableBody.addEventListener('blur', (event) => {
         if (event.target.classList.contains('quantity-input')) {
             const inputElement = event.target;
-            const itemId = inputElement.dataset.itemId; // Assumindo que o ID/index está no dataset
+            const itemId = inputElement.dataset.itemId; 
             const originalRawValue = inputElement.value;
 
-            // Quantidades podem ser 0, min 0. Max não definido. 3 casas decimais.
             const { isValid, value, numericValue, originalInputWasNumber } = validateNumberInput(originalRawValue, 0, null, false, 3);
 
             if (!originalInputWasNumber && originalRawValue.trim() !== "") {
-                inputElement.value = ''; // Limpa o campo
+                inputElement.value = ''; 
                 updateInputValidationUI(inputElement, false, `quantity-error-${itemId}`);
-                // updateItemQuantityInStructure(itemId, 0); // Atualiza no data.js para 0 ou valor que representa vazio
+                updateItemQuantityInStructure(itemId, 0); 
             } else {
-                inputElement.value = value; // Coloca valor formatado/corrigido
-                updateInputValidationUI(inputElement, isValid, `quantity-error-${itemId}`);
-                updateItemQuantityInStructure(itemId, numericValue); // Atualiza no data.js
+                inputElement.value = value; 
+                updateInputValidationUI(inputElement, isValid && originalInputWasNumber, `quantity-error-${itemId}`);
+                updateItemQuantityInStructure(itemId, numericValue); 
             }
-            calculateAllSubtotalsAndTotal(); // Recalcula tudo após a mudança
-            renderBudgetTable(getFilteredItems(document.getElementById('search-input').value)); // Re-renderiza a tabela com os itens atuais (filtrados ou não)
+            calculateAllSubtotalsAndTotal(); 
+            const searchInputValue = document.getElementById('search-input') ? document.getElementById('search-input').value : "";
+            renderBudgetTable(searchInputValue); 
         }
-    }, true); // Use capturing phase for blur
+    }, true); 
 
-    // Listener para a barra de busca
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
         searchInput.addEventListener('input', debounce((event) => {
-            const searchTerm = event.target.value;
-            renderBudgetTable(getFilteredItems(searchTerm));
-        }, 300)); // 300ms debounce
+            renderBudgetTable(event.target.value);
+        }, 300));
     }
 }
 
-// Inicialização da tabela na aba Calculadora
-// Isso pode ser chamado quando a aba Calculadora é ativada em main.js
 export function initCalculatorTab() {
-    renderBudgetTable(budgetDataStructure); // Renderiza a tabela inicial
-    // setupCalculatorEventListeners já configura os listeners no tableBody,
-    // então não precisa ser chamado a cada render se a delegação for usada corretamente.
+    const searchInputValue = document.getElementById('search-input') ? document.getElementById('search-input').value : "";
+    renderBudgetTable(searchInputValue); // Renderiza a tabela inicial
+    // setupCalculatorEventListeners deve ser chamado uma vez, idealmente em main.js ou quando a aba é ativada pela primeira vez.
 }

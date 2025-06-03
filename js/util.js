@@ -8,10 +8,10 @@
  * @param {boolean} isInteger Se o valor deve ser um inteiro.
  * @param {number} decimalPlaces O número de casas decimais para arredondamento (padrão 2).
  * @returns {{
- *  isValid: boolean, 
- *  value: string, 
- *  numericValue: number, 
- *  originalInputWasNumber: boolean 
+ *  isValid: boolean, // Se o valor final é válido após correções
+ *  value: string, // O valor formatado (string)
+ *  numericValue: number, // O valor numérico
+ *  originalInputWasNumber: boolean // Se a entrada original era um número (antes de verificar min/max)
  * }}
  */
 export function validateNumberInput(value, min, max = null, isInteger = false, decimalPlaces = 2) {
@@ -39,7 +39,7 @@ export function validateNumberInput(value, min, max = null, isInteger = false, d
     if (isInteger) {
         const finalNumericValue = Math.round(numericValue);
         return {
-            isValid: isValid && originalInputWasNumber,
+            isValid: isValid && originalInputWasNumber, 
             value: String(finalNumericValue),
             numericValue: finalNumericValue,
             originalInputWasNumber
@@ -79,7 +79,7 @@ export function debounce(func, delay) {
  * @returns {string} A string escapada para CSV.
  */
 export function escapeCsvCell(cellData) {
-    if (cellData == null) {
+    if (cellData == null) { 
         return '';
     }
     const stringData = String(cellData);
@@ -91,7 +91,6 @@ export function escapeCsvCell(cellData) {
 }
 
 /**
- * ALTERAÇÃO AQUI: Adicionada função para formatar números
  * Formata um número para uma string com um número fixo de casas decimais.
  * @param {number | string} numberToFormat O número ou string numérica a ser formatada.
  * @param {number} decimalPlaces O número de casas decimais desejadas (padrão 2).
@@ -100,8 +99,10 @@ export function escapeCsvCell(cellData) {
 export function formatNumber(numberToFormat, decimalPlaces = 2) {
     const num = parseFloat(numberToFormat);
     if (isNaN(num)) {
-        return ''; // Ou talvez '0.00' ou lançar um erro, dependendo do que exportacao.js espera
+        // Retorna '0.00' formatado para consistência na UI, se um número é esperado.
+        // Para exportação, pode ser melhor retornar string vazia se a intenção for omitir.
+        // Ajuste conforme a necessidade do contexto de uso.
+        return (0).toFixed(decimalPlaces); 
     }
     return num.toFixed(decimalPlaces);
 }
-// FIM DA ALTERAÇÃO

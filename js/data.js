@@ -5,12 +5,12 @@ export let config = {
     laborCosts: { pedreiro: 38.00, servente: 20.00, impermeabilizador: 38.00, carpinteiro: 38.00, armador: 38.00 },
     materialPrices: {}, // Será populado a partir de materiaisBase
     bdi: {
-        bdiFinalAdotado: 25.00, // Exemplo, ajuste conforme seu padrão (era 105, talvez fosse 1.05 e multiplicado por 100?)
+        bdiFinalAdotado: 25.00, 
     },
     project: {
-        areaObra: 100, // Exemplo
+        areaObra: 100, 
     },
-    bdiSimulation: { // Adicionando a estrutura para simulação de BDI (valores como decimais)
+    bdiSimulation: { 
         adminPercent: 0.10, 
         riskPercent: 0.05,
         financialCostPercent: 0.02,
@@ -34,7 +34,7 @@ export const materiaisBase = {
     viaplus7000_18kg: { nomeDisplay: "Viaplus 7000 (balde 18kg)", unidade: "balde", pesoKg: 18, precoUnitarioDefault: 250.00 },
     telaPoliester: { nomeDisplay: "Tela de Poliéster", unidade: "m²", pesoKg: 0.15, precoUnitarioDefault: 3.50 },
     pedra1Saco20kg: { nomeDisplay: "Pedra 1 (20 kg/saco)", unidade: "saco", pesoKg: 20, precoUnitarioDefault: 6.00 },
-    blocoCCA: { nomeDisplay: "Bloco de Concreto Celular", unidade: "unidade", pesoKg: 10.80, precoUnitarioDefault: 19.00 }, // Este ID é genérico, pode precisar de ajuste se houver vários tipos de BlocoCCA
+    blocoCCA: { nomeDisplay: "Bloco de Concreto Celular", unidade: "unidade", pesoKg: 10.80, precoUnitarioDefault: 19.00 },
     blocoCCA603010: { nomeDisplay: "Bloco de Concreto Celular (60x30x10cm)", unidade: "unidade", pesoKg: 10.80, precoUnitarioDefault: 13.00 },
     telaAcoPesada4_2mm10x10: { nomeDisplay: "Tela Aço Pesada 4,2mm Malha 10x10cm (Painel 2x3m)", unidade: "painel", pesoKg: (2*3) * 2.22, precoUnitarioDefault: 120.00 },
     arameRecozidoKg: { nomeDisplay: "Arame Recozido (para amarrações)", unidade: "kg", pesoKg: 1, precoUnitarioDefault: 15.00 },
@@ -44,12 +44,10 @@ export const materiaisBase = {
     eps15cm: { nomeDisplay: "EPS (Placa 1x1m, 15cm)", unidade: "m²", pesoKg: 2.25, precoUnitarioDefault: 35.25 },
 };
 
-// Inicializa materialPrices com os defaults de materiaisBase
 Object.keys(materiaisBase).forEach(idMat => {
     config.materialPrices[idMat] = materiaisBase[idMat].precoUnitarioDefault;
 });
 
-// Estrutura principal dos itens do orçamento
 export let budgetDataStructure = [
     { id: "COMP-SC001", categoria: "Pequenas Estruturas / Contenções", description: "Sóculo em bloco cerâmico (altura 19 cm) - por ml", refComposition: "COMP-SC001", unit: "ml", initialQuantity: 0, unitPrice: 0, subtotal: 0, unitHHProfessional: 0.43, unitHHelper: 0.29, unitWeight: 72.40, professionals: { pedreiro: 0.43 }, helpers: { servente: 0.29 }, detailedMaterials: [ { idMaterial: "areiaSaco20kg", consumptionPerUnit: (16/7), lossPercent: 5 }, { idMaterial: "cimento50kg", consumptionPerUnit: (1.90/7), lossPercent: 5 }, { idMaterial: "blocoCeramico9cm", consumptionPerUnit: (20/7), lossPercent: 3 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (1/7), lossPercent: 0 } ], observationsText: "Verifique a base. Nível e Prumo. Amarração. Cura da Argamassa.", equipmentList: ["Carrinho de mão", "Pá", "Enxada", "Baldes", "Colher de pedreiro", "Desempenadeira", "Martelo de borracha", "Trena", "Nível de bolha/mangueira/a laser", "Prumo"] },
     { id: "COMP-CHAP001", categoria: "Revestimentos / Argamassa", description: "Chapisco em Superfícies de Alvenaria (3mm)", refComposition: "COMP-CHAP001", unit: "m²", initialQuantity: 0, unitPrice: 0, subtotal: 0, unitHHProfessional: 0.12, unitHHelper: 0.08, unitWeight: 6.34, professionals: { pedreiro: 0.12 }, helpers: { servente: 0.08 }, detailedMaterials: [ { idMaterial: "cimento50kg", consumptionPerUnit: (2.52/100), lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: (22.59/100), lossPercent: 5 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (1/100), lossPercent: 0 } ], observationsText: "Limpeza da Superfície. Umedecimento. Cura. Cobrimento rugoso.", equipmentList: ["Vassoura de piaçava ou broxa", "Baldes", "Masseira/carrinho de mão"] },
@@ -79,7 +77,7 @@ export let budgetDataStructure = [
     { id: "COMP-MUR_CCA003-REG", categoria: "Alvenarias / Vedações Verticais", description: "Mureta Bl. CCA (60x30x10cm) - 10cm alt COM Regularização", refComposition: "COMP-MUR_CCA003-REG", unit: "ml", initialQuantity: 0, unitPrice: 0, subtotal: 0, unitHHProfessional: 0.19, unitHHelper: 0.14, unitWeight: 25.60, professionals: { pedreiro: 0.19 }, helpers: { servente: 0.14 }, detailedMaterials: [ { idMaterial: "blocoCCA603010", consumptionPerUnit: (83.30/100), lossPercent: 3 }, { idMaterial: "cimento50kg", consumptionPerUnit: (0.18/100), lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: (0.90/100), lossPercent: 5 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (1/100), lossPercent: 0 }, { idMaterial: "cimento50kg", consumptionPerUnit: (6.30/100), lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: (56.48/100), lossPercent: 5 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (2/100), lossPercent: 0 } ], observationsText: "Mureta 10cm CCA, c/ chapisco e reboco. Nivelamento e prumo.", equipmentList: ["Serra bloco", "Colher", "Desempenadeira", "Nível", "Prumo", "Linha", "Baldes", "Masseira", "Betoneira"] },
     { id: "COMP-MUR_CCA004-REG", categoria: "Alvenarias / Vedações Verticais", description: "Mureta Bl. CCA (60x30x10cm) - 30cm alt COM Regularização", refComposition: "COMP-MUR_CCA004-REG", unit: "ml", initialQuantity: 0, unitPrice: 0, subtotal: 0, unitHHProfessional: 0.35, unitHHelper: 0.23, unitWeight: 55.40, professionals: { pedreiro: 0.35 }, helpers: { servente: 0.23 }, detailedMaterials: [ { idMaterial: "blocoCCA603010", consumptionPerUnit: (166.67/100), lossPercent: 3 }, { idMaterial: "cimento50kg", consumptionPerUnit: (0.36/100), lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: (1.80/100), lossPercent: 5 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (1/100), lossPercent: 0 }, { idMaterial: "cimento50kg", consumptionPerUnit: (14.70/100), lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: (131.78/100), lossPercent: 5 }, { idMaterial: "bianco18L", consumptionPerUnit: (1/100), lossPercent: 0 } ], observationsText: "Mureta 30cm CCA deitado, c/ chapisco e reboco. Nivelamento e prumo.", equipmentList: ["Serra bloco", "Colher", "Desempenadeira", "Nível", "Prumo", "Linha", "Baldes", "Masseira", "Betoneira"] },
     { id: "COMP-SC002", categoria: "Pequenas Estruturas / Contenções", description: "Sóculo em bloco cerâmico (altura 19 cm) - por m² de face", refComposition: "COMP-SC002", unit: "m²", initialQuantity: 0, unitPrice: 0, subtotal: 0, unitHHProfessional: 0.50, unitHHelper: 0.33, unitWeight: 84.46, professionals: { pedreiro: 0.50 }, helpers: { servente: 0.33 }, detailedMaterials: [ { idMaterial: "areiaSaco20kg", consumptionPerUnit: (16/6), lossPercent: 5 }, { idMaterial: "cimento50kg", consumptionPerUnit: (1.90/6), lossPercent: 5 }, { idMaterial: "blocoCeramico9cm", consumptionPerUnit: (20/6), lossPercent: 3 }, { idMaterial: "bianco3_6L", consumptionPerUnit: ( (1.90/6) * 1 / 3.6 ), lossPercent: 0 } ], observationsText: "Verifique a base. Nível e Prumo. Amarração. Cura. Medição por m² de face.", equipmentList: ["Carrinho", "Pá", "Enxada", "Baldes", "Colher", "Desempenadeira", "Martelo borracha", "Trena", "Nível", "Prumo"] },
-    { id: "COMP-REG-PAR20", categoria: "Revestimentos / Argamassa", description: "Regularização de Parede - 2cm (Chapisco + Reboco)", refComposition: "COMP-REG-PAR20", unit: "m²", initialQuantity: 0, unitPrice: 0, subtotal: 0, unitHHProfessional: 0.35, unitHHelper: 0.45, unitWeight: 51.33, professionals: { pedreiro: 0.35 }, helpers: { servente: 0.45 }, detailedMaterials: [ { idMaterial: "cimento50kg", consumptionPerUnit: 0.2100, lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: 1.8825, lossPercent: 5 }, { idMaterial: "bianco18L", consumptionPerUnit: (1/100), lossPercent: 0 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (1/100), lossPercent: 0 } ], observationsText: "Espessura 2,5cm (0,5cm chapisco + 2,0cm reboco). Limpeza. Chapisco. Pontos/Mestras. Reboco. Acabamento. Cura.", equipmentList: ["Betoneira", "Colher", "Desempenadeira", "Régua", "Prumo", "Nível", "Taliscas", "Andaimes", "Carrinho", "Pá", "Enxada", "Baldes"] },
+    { id: "COMP-REG-PAR20", categoria: "Revestimentos / Argamassa", description: "Regularização de Parede - 2cm (Chapisco + Reboco)", refComposition: "COMP-REG-P_blankAR20", unit: "m²", initialQuantity: 0, unitPrice: 0, subtotal: 0, unitHHProfessional: 0.35, unitHHelper: 0.45, unitWeight: 51.33, professionals: { pedreiro: 0.35 }, helpers: { servente: 0.45 }, detailedMaterials: [ { idMaterial: "cimento50kg", consumptionPerUnit: 0.2100, lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: 1.8825, lossPercent: 5 }, { idMaterial: "bianco18L", consumptionPerUnit: (1/100), lossPercent: 0 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (1/100), lossPercent: 0 } ], observationsText: "Espessura 2,5cm (0,5cm chapisco + 2,0cm reboco). Limpeza. Chapisco. Pontos/Mestras. Reboco. Acabamento. Cura.", equipmentList: ["Betoneira", "Colher", "Desempenadeira", "Régua", "Prumo", "Nível", "Taliscas", "Andaimes", "Carrinho", "Pá", "Enxada", "Baldes"] },
     { id: "COMP-CONTRAPISO-CONV-3CM", categoria: "Pisos / Nivelamento", description: "Contrapiso Convencional – 3cm", refComposition: "COMP-CONTRAPISO-CONV-3CM", unit: "m²", initialQuantity: 0, unitPrice: 0, subtotal: 0, unitHHProfessional: 0.12, unitHHelper: 0.18, unitWeight: 61.40, professionals: { pedreiro: 0.12 }, helpers: { servente: 0.18 }, detailedMaterials: [ { idMaterial: "cimento50kg", consumptionPerUnit: 0.2520, lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: 2.2590, lossPercent: 5 }, { idMaterial: "bianco18L", consumptionPerUnit: (1/100), lossPercent: 0 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (3/100), lossPercent: 0 } ], observationsText: "Espessura 3cm. Nivelamento c/ taliscas/mestras. Traço 1:3,0. Juntas Dilatação. Cura 7 dias.", equipmentList: ["Betoneira", "Carrinho", "Pá", "Enxada", "Baldes", "Colher", "Desempenadeira", "Régua", "Nível"] }
 ];
 
@@ -90,12 +88,9 @@ export function setConfigValue(path, value) {
     let current = config;
     keys.forEach((key, index) => {
         if (index === keys.length - 1) {
-            // Se o valor for um número, armazena como número, senão como string ou o que for
-            current[key] = (typeof value === 'string' && !isNaN(parseFloat(value))) ? parseFloat(value) : value;
-            // Para campos de percentual na simulação, já são salvos como decimais
-            // Se for um campo que deve ser explicitamente string, precisaria de tratamento adicional
+            current[key] = value; // O valor já deve vir como número se for numérico
         } else {
-            if (!current[key] || typeof current[key] !== 'object') { // Garante que o caminho intermediário é um objeto
+            if (!current[key] || typeof current[key] !== 'object') { 
                 current[key] = {};
             }
             current = current[key];
@@ -104,59 +99,64 @@ export function setConfigValue(path, value) {
 }
 
 
-// Atualiza a quantidade de um item e recalcula seu subtotal
 export function updateItemQuantityInStructure(itemId, quantity) {
     const item = budgetDataStructure.find(i => i.id === itemId);
     if (item) {
         item.initialQuantity = parseFloat(quantity) || 0;
-        // A lógica de recalcular subtotal e preço unitário será chamada separadamente
-        // quando necessário (ex: em calculateAllSubtotalsAndTotal ou ao carregar)
     }
 }
 
 
-// Funções getter para o estado global
 export function getConfig() {
-    return JSON.parse(JSON.stringify(config)); // Retorna uma cópia profunda
+    return JSON.parse(JSON.stringify(config)); 
 }
 export function getBudgetData() { return budgetDataStructure; }
 export function getMateriaisBase() { return materiaisBase; }
 
 
-// Funções de cálculo
 export function calculateItemUnitPrice(item, currentConfig) {
     let totalMaterialCost = 0;
-    item.detailedMaterials.forEach(matDetail => {
-        const materialBase = materiaisBase[matDetail.idMaterial];
-        const materialPrice = currentConfig.materialPrices[matDetail.idMaterial] || materialBase.precoUnitarioDefault;
-        const consumptionWithLoss = matDetail.consumptionPerUnit * (1 + (matDetail.lossPercent / 100));
-        totalMaterialCost += consumptionWithLoss * materialPrice;
-    });
+    if (item.detailedMaterials) {
+        item.detailedMaterials.forEach(matDetail => {
+            const materialBase = materiaisBase[matDetail.idMaterial];
+            if (!materialBase) {
+                console.warn(`Material base não encontrado para ID: ${matDetail.idMaterial} no item ${item.id}`);
+                return;
+            }
+            const materialPrice = currentConfig.materialPrices[matDetail.idMaterial] != null ? currentConfig.materialPrices[matDetail.idMaterial] : materialBase.precoUnitarioDefault;
+            const consumptionWithLoss = matDetail.consumptionPerUnit * (1 + (matDetail.lossPercent / 100));
+            totalMaterialCost += consumptionWithLoss * materialPrice;
+        });
+    }
 
     let totalLaborCost = 0;
-    Object.keys(item.professionals).forEach(profKey => {
-        const hours = item.professionals[profKey];
-        const laborPrice = currentConfig.laborCosts[profKey] || 0;
-        totalLaborCost += hours * laborPrice;
-    });
-    Object.keys(item.helpers).forEach(helperKey => {
-        const hours = item.helpers[helperKey];
-        const laborPrice = currentConfig.laborCosts[helperKey] || 0;
-        totalLaborCost += hours * laborPrice;
-    });
+    if (item.professionals) {
+        Object.keys(item.professionals).forEach(profKey => {
+            const hours = item.professionals[profKey];
+            const laborPrice = currentConfig.laborCosts[profKey] || 0;
+            totalLaborCost += hours * laborPrice;
+        });
+    }
+    if (item.helpers) {
+        Object.keys(item.helpers).forEach(helperKey => {
+            const hours = item.helpers[helperKey];
+            const laborPrice = currentConfig.laborCosts[helperKey] || 0;
+            totalLaborCost += hours * laborPrice;
+        });
+    }
     
     item.unitPrice = totalMaterialCost + totalLaborCost;
     return item.unitPrice;
 }
 
 export function calculateItemSubtotal(item) {
-    item.subtotal = item.initialQuantity * item.unitPrice;
+    item.subtotal = (item.initialQuantity || 0) * (item.unitPrice || 0);
     return item.subtotal;
 }
 
 export function calculateAllSubtotalsAndTotal() {
     let totalGeralSemBDI = 0;
-    const currentConfig = getConfig(); // Pega a config atual para os cálculos
+    const currentConfig = getConfig(); 
 
     budgetDataStructure.forEach(item => {
         calculateItemUnitPrice(item, currentConfig);
@@ -164,7 +164,7 @@ export function calculateAllSubtotalsAndTotal() {
         totalGeralSemBDI += item.subtotal;
     });
 
-    const bdiPercent = currentConfig.bdi.bdiFinalAdotado / 100; // BDI como decimal
+    const bdiPercent = (currentConfig.bdi.bdiFinalAdotado / 100) || 0; 
     const totalGeralComBDI = totalGeralSemBDI * (1 + bdiPercent);
     
     const totalDisplay = document.getElementById('total-geral-orcamento');
@@ -174,7 +174,6 @@ export function calculateAllSubtotalsAndTotal() {
     return totalGeralComBDI;
 }
 
-// Filtra os itens da calculadora
 export function getFilteredItems(searchTerm) {
     if (!searchTerm || searchTerm.trim() === "") {
         return budgetDataStructure;
@@ -187,10 +186,9 @@ export function getFilteredItems(searchTerm) {
     );
 }
 
-// Lógica de persistência
 export function saveBudgetToLocalStorage() {
     const budgetToSave = {
-        config: config, // Salva o objeto de configuração inteiro
+        config: config, 
         budgetItemsQuantities: budgetDataStructure.map(item => ({ id: item.id, initialQuantity: item.initialQuantity }))
     };
     localStorage.setItem('budgetManagerData', JSON.stringify(budgetToSave));
@@ -202,22 +200,23 @@ export function loadBudgetFromLocalStorage() {
     if (savedData) {
         try {
             const parsedData = JSON.parse(savedData);
+            const defaultConfig = JSON.parse(JSON.stringify(config));
             
-            // Mescla a configuração salva com a estrutura de config padrão
-            // para garantir que novas chaves de config sejam consideradas
-            const defaultConfig = JSON.parse(JSON.stringify(config)); // Cópia profunda do default
-            
-            // Merge profundo para config
             function mergeDeep(target, source) {
                 for (const key in source) {
-                    if (source[key] instanceof Object && key in target && target[key] instanceof Object) {
-                        mergeDeep(target[key], source[key]);
-                    } else {
-                        target[key] = source[key];
+                    if (source.hasOwnProperty(key)) {
+                        if (source[key] instanceof Object && key in target && target[key] instanceof Object) {
+                            mergeDeep(target[key], source[key]);
+                        } else {
+                            target[key] = source[key];
+                        }
                     }
                 }
             }
-            mergeDeep(defaultConfig, parsedData.config || {});
+            
+            if (parsedData.config) {
+                mergeDeep(defaultConfig, parsedData.config);
+            }
             config = defaultConfig;
 
 
@@ -225,16 +224,16 @@ export function loadBudgetFromLocalStorage() {
                 parsedData.budgetItemsQuantities.forEach(savedItem => {
                     const budgetItem = budgetDataStructure.find(i => i.id === savedItem.id);
                     if (budgetItem) {
-                        budgetItem.initialQuantity = savedItem.initialQuantity;
+                        budgetItem.initialQuantity = savedItem.initialQuantity || 0;
                     }
                 });
             }
             console.log('Orçamento carregado do LocalStorage.');
-            calculateAllSubtotalsAndTotal(); // Recalcula tudo após carregar
+            calculateAllSubtotalsAndTotal(); 
             return true;
         } catch (error) {
             console.error("Erro ao parsear dados do LocalStorage:", error);
-            localStorage.removeItem('budgetManagerData'); // Remove dados corrompidos
+            localStorage.removeItem('budgetManagerData'); 
             return false;
         }
     }

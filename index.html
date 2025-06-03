@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Orçamento de Obra</title>
-    <!-- ALTERAÇÃO AQUI: Link para o arquivo CSS -->
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -31,30 +30,135 @@
                     <legend>Custos de Mão de Obra (R$/hora ou R$/dia)</legend>
                     <div>
                         <label for="laborPedreiro">Pedreiro:</label>
-                        <input type="text" id="laborPedreiro" class="cost-input" data-key="pedreiro" aria-describedby="laborPedreiro-error">
+                        <input type="text" id="laborPedreiro" class="cost-input" aria-describedby="laborPedreiro-error">
                         <span id="laborPedreiro-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
                     </div>
                     <div>
                         <label for="laborServente">Servente:</label>
-                        <input type="text" id="laborServente" class="cost-input" data-key="servente" aria-describedby="laborServente-error">
+                        <input type="text" id="laborServente" class="cost-input" aria-describedby="laborServente-error">
                         <span id="laborServente-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
                     </div>
-                    <!-- Adicione outros inputs de mão de obra aqui, seguindo o padrão -->
+                    <div>
+                        <label for="laborImpermeabilizador">Impermeabilizador:</label>
+                        <input type="text" id="laborImpermeabilizador" class="cost-input" aria-describedby="laborImpermeabilizador-error">
+                        <span id="laborImpermeabilizador-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="laborCarpinteiro">Carpinteiro:</label>
+                        <input type="text" id="laborCarpinteiro" class="cost-input" aria-describedby="laborCarpinteiro-error">
+                        <span id="laborCarpinteiro-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="laborArmador">Armador:</label>
+                        <input type="text" id="laborArmador" class="cost-input" aria-describedby="laborArmador-error">
+                        <span id="laborArmador-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
                 </fieldset>
 
                 <fieldset>
                     <legend>Preços de Materiais (R$/unidade)</legend>
+                    <!-- ALTERAÇÃO AQUI: Inputs de Materiais Completos -->
                     <div>
-                        <label for="materialCimento">Cimento (saco 50kg):</label>
-                        <input type="text" id="materialCimento" class="cost-input" data-key="cimento" aria-describedby="materialCimento-error">
-                        <span id="materialCimento-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                        <label for="materialAreiaSaco20kg">Areia (sacos de 20 kg):</label>
+                        <input type="text" id="materialAreiaSaco20kg" class="cost-input" aria-describedby="materialAreiaSaco20kg-error">
+                        <span id="materialAreiaSaco20kg-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
                     </div>
                     <div>
-                        <label for="materialAreia">Areia (m³):</label>
-                        <input type="text" id="materialAreia" class="cost-input" data-key="areia" aria-describedby="materialAreia-error">
-                        <span id="materialAreia-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                        <label for="materialCimento50kg">Cimento (50 kg):</label>
+                        <input type="text" id="materialCimento50kg" class="cost-input" aria-describedby="materialCimento50kg-error">
+                        <span id="materialCimento50kg-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
                     </div>
-                    <!-- Adicione outros inputs de materiais aqui, seguindo o padrão -->
+                    <div>
+                        <label for="materialBlocoCeramico9cm">Bloco cerâmico 39x19x9 cm:</label>
+                        <input type="text" id="materialBlocoCeramico9cm" class="cost-input" aria-describedby="materialBlocoCeramico9cm-error">
+                        <span id="materialBlocoCeramico9cm-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialBianco3_6L">Bianco (balde 3,6L):</label>
+                        <input type="text" id="materialBianco3_6L" class="cost-input" aria-describedby="materialBianco3_6L-error">
+                        <span id="materialBianco3_6L-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialBianco18L">Bianco (18L):</label>
+                        <input type="text" id="materialBianco18L" class="cost-input" aria-describedby="materialBianco18L-error">
+                        <span id="materialBianco18L-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialBlocoConcreto39x19x19">Bloco de Concreto 39x19x39 cm:</label>
+                        <input type="text" id="materialBlocoConcreto39x19x19" class="cost-input" aria-describedby="materialBlocoConcreto39x19x19-error">
+                        <span id="materialBlocoConcreto39x19x19-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialEps10cm">EPS (Placa 1x1m, 10cm):</label>
+                        <input type="text" id="materialEps10cm" class="cost-input" aria-describedby="materialEps10cm-error">
+                        <span id="materialEps10cm-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialTelaQ61">Tela Soldada Q61 (3,4mm/15cm):</label>
+                        <input type="text" id="materialTelaQ61" class="cost-input" aria-describedby="materialTelaQ61-error">
+                        <span id="materialTelaQ61-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialBlocoCeramico14cm">Bloco Cerâmico 14x19x29cm:</label>
+                        <input type="text" id="materialBlocoCeramico14cm" class="cost-input" aria-describedby="materialBlocoCeramico14cm-error">
+                        <span id="materialBlocoCeramico14cm-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialViaplus7000_18kg">Viaplus 7000 (balde 18kg):</label>
+                        <input type="text" id="materialViaplus7000_18kg" class="cost-input" aria-describedby="materialViaplus7000_18kg-error">
+                        <span id="materialViaplus7000_18kg-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialTelaPoliester">Tela de Poliéster:</label>
+                        <input type="text" id="materialTelaPoliester" class="cost-input" aria-describedby="materialTelaPoliester-error">
+                        <span id="materialTelaPoliester-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialPedra1Saco20kg">Pedra 1 (20 kg/saco):</label>
+                        <input type="text" id="materialPedra1Saco20kg" class="cost-input" aria-describedby="materialPedra1Saco20kg-error">
+                        <span id="materialPedra1Saco20kg-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialBlocoCCA">Bloco de Concreto Celular (genérico):</label>
+                        <input type="text" id="materialBlocoCCA" class="cost-input" aria-describedby="materialBlocoCCA-error">
+                        <span id="materialBlocoCCA-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialBlocoCCA603010">Bloco de Concreto Celular (60x30x10cm):</label>
+                        <input type="text" id="materialBlocoCCA603010" class="cost-input" aria-describedby="materialBlocoCCA603010-error">
+                        <span id="materialBlocoCCA603010-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialTelaAcoPesada4_2mm10x10">Tela Aço Pesada 4,2mm Malha 10x10cm:</label>
+                        <input type="text" id="materialTelaAcoPesada4_2mm10x10" class="cost-input" aria-describedby="materialTelaAcoPesada4_2mm10x10-error">
+                        <span id="materialTelaAcoPesada4_2mm10x10-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialArameRecozidoKg">Arame Recozido (kg):</label>
+                        <input type="text" id="materialArameRecozidoKg" class="cost-input" aria-describedby="materialArameRecozidoKg-error">
+                        <span id="materialArameRecozidoKg-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialTabuasMadeiraM2">Tábuas de Madeira (m²):</label>
+                        <input type="text" id="materialTabuasMadeiraM2" class="cost-input" aria-describedby="materialTabuasMadeiraM2-error">
+                        <span id="materialTabuasMadeiraM2-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialPregoKg">Prego (kg):</label>
+                        <input type="text" id="materialPregoKg" class="cost-input" aria-describedby="materialPregoKg-error">
+                        <span id="materialPregoKg-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialTelaAcoLeve4_2mm15x15">Tela Aço Leve 4,2mm Malha 15x15cm:</label>
+                        <input type="text" id="materialTelaAcoLeve4_2mm15x15" class="cost-input" aria-describedby="materialTelaAcoLeve4_2mm15x15-error">
+                        <span id="materialTelaAcoLeve4_2mm15x15-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <div>
+                        <label for="materialEps15cm">EPS (Placa 1x1m, 15cm):</label>
+                        <input type="text" id="materialEps15cm" class="cost-input" aria-describedby="materialEps15cm-error">
+                        <span id="materialEps15cm-error" class="sr-only">Valor inválido. Insira um número positivo.</span>
+                    </div>
+                    <!-- FIM DA ALTERAÇÃO DOS INPUTS DE MATERIAIS -->
                 </fieldset>
 
                 <fieldset>
@@ -85,7 +189,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Código</th>
+                        <th>Código/ID</th>
                         <th>Descrição do Serviço/Material</th>
                         <th>Unidade</th>
                         <th>Quantidade</th>
@@ -95,24 +199,10 @@
                 </thead>
                 <tbody id="budget-table-body">
                     <!-- Linhas da tabela serão populadas por JavaScript -->
-                    <!-- Exemplo de input de quantidade com span de erro (será gerado pelo JS) -->
-                    <!-- 
-                    <tr>
-                        <td>SVC001</td>
-                        <td>Alvenaria de Vedação</td>
-                        <td>m²</td>
-                        <td>
-                            <input type="text" class="quantity-input" data-item-id="SVC001" aria-describedby="quantity-error-SVC001">
-                            <span id="quantity-error-SVC001" class="sr-only">Quantidade inválida.</span>
-                        </td>
-                        <td>120.00</td>
-                        <td>0.00</td>
-                    </tr>
-                    -->
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="5" style="text-align: right; font-weight: bold;">Total Geral:</td>
+                        <td colspan="5" style="text-align: right; font-weight: bold;">Total Geral (c/ BDI):</td>
                         <td id="total-geral-orcamento" style="font-weight: bold;">R$ 0,00</td>
                     </tr>
                 </tfoot>
@@ -126,30 +216,30 @@
                 <div>
                     <label for="adminPercent">Administração Central (%):</label>
                     <input type="text" id="adminPercent" class="percentage-input" aria-describedby="adminPercent-error">
-                    <span id="adminPercent-error" class="sr-only">Valor inválido. Insira um percentual de 0 a 100.</span>
+                    <span id="adminPercent-error" class="sr-only">Valor inválido. Insira um percentual.</span>
                 </div>
                 <div>
                     <label for="riskPercent">Risco e Imprevistos (%):</label>
                     <input type="text" id="riskPercent" class="percentage-input" aria-describedby="riskPercent-error">
-                    <span id="riskPercent-error" class="sr-only">Valor inválido. Insira um percentual de 0 a 100.</span>
+                    <span id="riskPercent-error" class="sr-only">Valor inválido. Insira um percentual.</span>
                 </div>
                 <div>
                     <label for="financialCostPercent">Custo Financeiro (%):</label>
                     <input type="text" id="financialCostPercent" class="percentage-input" aria-describedby="financialCostPercent-error">
-                    <span id="financialCostPercent-error" class="sr-only">Valor inválido. Insira um percentual de 0 a 100.</span>
+                    <span id="financialCostPercent-error" class="sr-only">Valor inválido. Insira um percentual.</span>
                 </div>
                 <div>
                     <label for="taxesPercent">Tributos (ISS, PIS, COFINS, etc.) (%):</label>
                     <input type="text" id="taxesPercent" class="percentage-input" aria-describedby="taxesPercent-error">
-                    <span id="taxesPercent-error" class="sr-only">Valor inválido. Insira um percentual de 0 a 100.</span>
+                    <span id="taxesPercent-error" class="sr-only">Valor inválido. Insira um percentual.</span>
                 </div>
                 <div>
                     <label for="profitPercent">Lucro Previsto (%):</label>
                     <input type="text" id="profitPercent" class="percentage-input" aria-describedby="profitPercent-error">
-                    <span id="profitPercent-error" class="sr-only">Valor inválido. Insira um percentual de 0 a 100.</span>
+                    <span id="profitPercent-error" class="sr-only">Valor inválido. Insira um percentual.</span>
                 </div>
                 <div>
-                    <label for="percentFaturamentoMO">% do Faturamento que é Mão de Obra (para cálculo de encargos sociais):</label>
+                    <label for="percentFaturamentoMO">% do Faturamento que é Mão de Obra:</label>
                     <input type="text" id="percentFaturamentoMO" class="percentage-input" aria-describedby="percentFaturamentoMO-error">
                     <span id="percentFaturamentoMO-error" class="sr-only">Valor inválido. Insira um percentual de 0 a 100.</span>
                 </div>
@@ -161,20 +251,7 @@
         <!-- Aba Relatórios -->
         <section id="relatorios" class="tab-content">
             <h2>Relatórios</h2>
-            <p>Em desenvolvimento... (Curva ABC, Gráficos de Pizza, Cronograma Gantt)</p>
-            <!-- Placeholder para futuros gráficos -->
-            <!-- <div>
-                <h3>Curva ABC de Custos</h3>
-                <canvas id="curvaABCCanvas"></canvas>
-            </div>
-            <div>
-                <h3>Distribuição de Custos</h3>
-                <canvas id="distribuicaoCustosCanvas"></canvas>
-            </div>
-            <div>
-                <h3>Cronograma Estimado (Gantt)</h3>
-                <div id="ganttChartContainer"></div>
-            </div> -->
+            <p>Em desenvolvimento...</p>
         </section>
 
         <!-- Aba Exportação -->
@@ -183,10 +260,18 @@
             <div>
                 <button id="save-budget-button">Salvar Orçamento (JSON)</button>
             </div>
+            <hr>
             <div>
                 <label for="load-budget-input">Carregar Orçamento (JSON):</label>
-                <input type="file" id="load-budget-input" accept=".json">
-                 <span id="load-budget-input-error" class="sr-only">Erro ao carregar o arquivo. Verifique se é um JSON válido.</span>
+                <input type="file" id="load-budget-input" accept=".json" aria-describedby="load-budget-input-error">
+                <span id="load-budget-input-error" class="sr-only">Erro ao carregar o arquivo.</span>
+            </div>
+            <hr>
+            <div>
+                <button id="export-consolidated-csv-button">Exportar Materiais Consolidados (CSV)</button>
+            </div>
+            <div>
+                <button id="export-detailed-csv-button">Exportar Materiais Detalhados por Serviço (CSV)</button>
             </div>
         </section>
     </main>
