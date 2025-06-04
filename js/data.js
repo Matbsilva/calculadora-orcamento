@@ -1,13 +1,20 @@
 // js/data.js
-import { parseFloatStrict } from './util.js';
+import { parseFloatStrict } from './utils.js';
 
-// Estado Global da Aplicação
-export let laborCosts = { pedreiro: 38.00, servente: 20.00, impermeabilizador: 38.00, carpinteiro: 38.00, armador: 38.00 };
+// --- Estado Global da Aplicação ---
+export let laborCosts = {
+    pedreiro: 38.00,
+    servente: 20.00,
+    impermeabilizador: 38.00,
+    carpinteiro: 38.00,
+    armador: 38.00
+};
+
 export let materialPrices = {}; // Será populado a partir de materiaisBase
+
 export let bdiFinalAdotado = 105.00;
 export let areaObra = 100;
 export let currentAggregatedMaterials = {};
-
 
 export const materiaisBase = {
     areiaSaco20kg: { nomeDisplay: "Areia (em sacos de 20 kg)", unidade: "saco", pesoKg: 20, precoUnitarioDefault: 5.00 },
@@ -15,14 +22,14 @@ export const materiaisBase = {
     blocoCeramico9cm: { nomeDisplay: "Bloco cerâmico 39x19x9 cm", unidade: "unidade", pesoKg: 3, precoUnitarioDefault: 3.50 },
     bianco3_6L: { nomeDisplay: "Bianco (balde 3,6L)", unidade: "balde", pesoKg: 3.78, precoUnitarioDefault: 100.00 },
     bianco18L: { nomeDisplay: "Bianco (18L)", unidade: "balde", pesoKg: 18.90, precoUnitarioDefault: 300.00 },
-    blocoConcreto39x19x19: { nomeDisplay: "Bloco de Concreto 39x19x39 cm", unidade: "un", pesoKg: 15, precoUnitarioDefault: 3.50 },
+    blocoConcreto39x19x19: { nomeDisplay: "Bloco de Concreto 39x19x19 cm", unidade: "un", pesoKg: 15, precoUnitarioDefault: 3.50 },
     eps10cm: { nomeDisplay: "EPS (Placa 1x1m, 10cm)", unidade: "m²", pesoKg: 1.50, precoUnitarioDefault: 23.50 },
     telaQ61: { nomeDisplay: "Tela Soldada Q61 (3,4mm/15cm)", unidade: "painel", pesoKg: 6.06, precoUnitarioDefault: 100.00 },
     blocoCeramico14cm: { nomeDisplay: "Bloco Cerâmico 14x19x29cm", unidade: "un", pesoKg: 2.5, precoUnitarioDefault: 1.50 },
     viaplus7000_18kg: { nomeDisplay: "Viaplus 7000 (balde 18kg)", unidade: "balde", pesoKg: 18, precoUnitarioDefault: 250.00 },
     telaPoliester: { nomeDisplay: "Tela de Poliéster", unidade: "m²", pesoKg: 0.15, precoUnitarioDefault: 3.50 },
     pedra1Saco20kg: { nomeDisplay: "Pedra 1 (20 kg/saco)", unidade: "saco", pesoKg: 20, precoUnitarioDefault: 6.00 },
-    blocoCCA: { nomeDisplay: "Bloco de Concreto Celular", unidade: "unidade", pesoKg: 10.80, precoUnitarioDefault: 19.00 },
+    blocoCCA: { nomeDisplay: "Bloco de Concreto Celular", unidade: "unidade", pesoKg: 10.80, precoUnitarioDefault: 19.00 }, // Este é o que você tinha
     blocoCCA603010: { nomeDisplay: "Bloco de Concreto Celular (60x30x10cm)", unidade: "unidade", pesoKg: 10.80, precoUnitarioDefault: 13.00 },
     telaAcoPesada4_2mm10x10: { nomeDisplay: "Tela Aço Pesada 4,2mm Malha 10x10cm (Painel 2x3m)", unidade: "painel", pesoKg: (2*3) * 2.22, precoUnitarioDefault: 120.00 },
     arameRecozidoKg: { nomeDisplay: "Arame Recozido (para amarrações)", unidade: "kg", pesoKg: 1, precoUnitarioDefault: 15.00 },
@@ -32,10 +39,12 @@ export const materiaisBase = {
     eps15cm: { nomeDisplay: "EPS (Placa 1x1m, 15cm)", unidade: "m²", pesoKg: 2.25, precoUnitarioDefault: 35.25 },
 };
 
-// Inicializa materialPrices com os defaults de materiaisBase
-Object.keys(materiaisBase).forEach(idMat => {
-    materialPrices[idMat] = materiaisBase[idMat].precoUnitarioDefault;
-});
+function initializeMaterialPrices() {
+    Object.keys(materiaisBase).forEach(idMat => {
+        materialPrices[idMat] = materiaisBase[idMat].precoUnitarioDefault;
+    });
+}
+initializeMaterialPrices();
 
 export const budgetDataStructure = [
     { categoria: "Pequenas Estruturas / Contenções", description: "Sóculo em bloco cerâmico (altura 19 cm) - por ml", refComposition: "COMP-SC001", unit: "ml", initialQuantity: 0, unitHHProfessional: 0.43, unitHHelper: 0.29, unitWeight: 72.40, professionals: { pedreiro: 0.43 }, helpers: { servente: 0.29 }, detailedMaterials: [ { idMaterial: "areiaSaco20kg", consumptionPerUnit: (16/7), lossPercent: 5 }, { idMaterial: "cimento50kg", consumptionPerUnit: (1.90/7), lossPercent: 5 }, { idMaterial: "blocoCeramico9cm", consumptionPerUnit: (20/7), lossPercent: 3 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (1/7), lossPercent: 0 } ], observationsText: "Verifique a base. Nível e Prumo. Amarração. Cura da Argamassa.", equipmentList: ["Carrinho de mão", "Pá", "Enxada", "Baldes", "Colher de pedreiro", "Desempenadeira", "Martelo de borracha", "Trena", "Nível de bolha/mangueira/a laser", "Prumo"] },
@@ -71,31 +80,63 @@ export const budgetDataStructure = [
 ];
 
 
-// Funções para atualizar o estado global
-export function updateLaborCost(type, value) { 
-    laborCosts[type] = parseFloatStrict(value); 
+// --- Funções para atualizar o estado global ---
+export function updateLaborCost(type, value) {
+    if (laborCosts.hasOwnProperty(type)) {
+        laborCosts[type] = parseFloatStrict(value);
+    } else {
+        console.warn(`Tentativa de atualizar custo para profissional não existente: ${type}`);
+    }
 }
-export function updateMaterialPrice(id, value) { 
-    materialPrices[id] = parseFloatStrict(value); 
+export function updateMaterialPrice(id, value) {
+    if (materialPrices.hasOwnProperty(id) || materiaisBase.hasOwnProperty(id)) {
+        materialPrices[id] = parseFloatStrict(value);
+    } else {
+         console.warn(`Tentativa de atualizar preço para material não existente ou não base: ${id}`);
+    }
 }
-export function setBdiFinalAdotado(value) { 
-    bdiFinalAdotado = parseFloatStrict(value); 
+export function setBdiFinalAdotado(value) {
+    bdiFinalAdotado = parseFloatStrict(value);
 }
-export function setAreaObra(value) { 
-    areaObra = parseFloatStrict(value); 
+export function setAreaObra(value) {
+    let val = parseFloatStrict(value);
+    areaObra = (val > 0) ? val : 1; // Garante que a área seja pelo menos 1
 }
-export function updateBudgetItemQuantity(index, quantity) {
-    if (budgetDataStructure[index]) { 
-        budgetDataStructure[index].initialQuantity = parseFloatStrict(quantity);
+export function updateBudgetItemQuantity(indexOrRef, quantity) {
+    let itemIndex = -1;
+    if (typeof indexOrRef === 'number') {
+        itemIndex = indexOrRef;
+    } else if (typeof indexOrRef === 'string') {
+        itemIndex = budgetDataStructure.findIndex(item => item.refComposition === indexOrRef);
+    }
+
+    if (budgetDataStructure[itemIndex]) {
+        budgetDataStructure[itemIndex].initialQuantity = parseFloatStrict(quantity);
+    } else {
+        console.warn("Índice ou refComposition inválido para updateBudgetItemQuantity:", indexOrRef);
     }
 }
 
-// Funções getter para o estado global
-export function getLaborCosts() { return { ...laborCosts }; } // Retorna uma cópia para evitar mutação externa direta
-export function getMaterialPrices() { return { ...materialPrices }; } // Retorna uma cópia
+// --- Funções getter para o estado global ---
+export function getLaborCosts() { return { ...laborCosts }; }
+export function getMaterialPrices() { return { ...materialPrices }; }
 export function getBdiFinalAdotado() { return bdiFinalAdotado; }
 export function getAreaObra() { return areaObra; }
-export function getBudgetData() { return budgetDataStructure; } // Retorna a referência ao array principal de dados
-export function getMateriaisBase() { return materiaisBase; }
-export function getCurrentAggregatedMaterials() { return { ...currentAggregatedMaterials }; } // Retorna uma cópia
+export function getBudgetDataStructure() { return budgetDataStructure; }
+export function getMateriaisBase() { return { ...materiaisBase }; }
+export function getCurrentAggregatedMaterials() { return { ...currentAggregatedMaterials }; }
 export function setCurrentAggregatedMaterials(aggMaterials) { currentAggregatedMaterials = aggMaterials; }
+
+// Chamada para garantir que materialPrices seja populado na carga inicial do módulo,
+// caso não venha do localStorage ou outra fonte depois.
+// Se localStorage for usado, essa inicialização deve ocorrer apenas se não houver dados salvos.
+// A lógica em config.js (loadConfig) e persistencia.js (loadBudget) agora gerencia
+// o carregamento de materialPrices. Esta chamada aqui garante que, se nada for carregado,
+// os defaults de materiaisBase sejam usados.
+// No entanto, a initializeMaterialPrices() já chamada acima faz esse trabalho.
+// Esta função abaixo não é estritamente necessária se initializeMaterialPrices() já foi chamada.
+// export function initializeMaterialPricesFromBaseIfNeeded() {
+//     if (Object.keys(materialPrices).length === 0) { // Só inicializa se estiver vazio
+//         initializeMaterialPrices();
+//     }
+// }

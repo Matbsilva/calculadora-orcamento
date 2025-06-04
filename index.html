@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Orçamento de Obra</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Favicon links (remova ou substitua se não tiver os arquivos) -->
+    <!-- Favicon links (se você não tiver os arquivos, pode remover estas 4 linhas) -->
     <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
     <link rel="manifest" href="favicon/site.webmanifest">
 
-    <!-- ADIÇÃO: CDN do Chart.js -->
+    <!-- CDN do Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- ADIÇÃO: CDN do Frappe Gantt (JS e CSS) -->
+    <!-- CDN do Frappe Gantt (JS e CSS) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
     <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
 </head>
@@ -32,17 +32,16 @@
 
     <main>
         <nav class="tab-nav">
-            <button class="tab-link active" data-tab="configuracoes">Configurações</button>
-            <button class="tab-link" data-tab="calculadora">Calculadora</button>
-            <button class="tab-link" data-tab="simulacoes-bdi">Simulações BDI</button>
-            <button class="tab-link" data-tab="resumo">Resumo</button>
-            <button class="tab-link" data-tab="listas">Listas</button>
-            <button class="tab-link" data-tab="curva-abc">Curva ABC</button>
-            <button class="tab-link" data-tab="cronograma">Cronograma Estimado</button>
+            <button class="tab-link active" data-tab="configuracoes" id="tab-link-configuracoes">Configurações</button>
+            <button class="tab-link" data-tab="calculadora" id="tab-link-calculadora">Calculadora</button>
+            <button class="tab-link" data-tab="simulacoes-bdi" id="tab-link-simulacoes-bdi">Simulações BDI</button>
+            <button class="tab-link" data-tab="resumo" id="tab-link-resumo">Resumo</button>
+            <button class="tab-link" data-tab="listas" id="tab-link-listas">Listas</button>
+            <button class="tab-link" data-tab="curva-abc" id="tab-link-curva-abc">Curva ABC</button>
+            <button class="tab-link" data-tab="cronograma" id="tab-link-cronograma">Cronograma Estimado</button>
         </nav>
 
-        <!-- Aba Configurações (sem alteração estrutural aqui) -->
-        <div id="configuracoes" class="tab-content active">
+        <div id="configuracoes" class="tab-content active" role="tabpanel" aria-labelledby="tab-link-configuracoes">
             <h2>Configurações Gerais e Custos</h2>
             <div class="config-grid">
                 <div class="config-section">
@@ -50,15 +49,15 @@
                     <div class="input-group"><label for="inputCustoPedreiro">Pedreiro:</label><input type="text" id="inputCustoPedreiro" placeholder="R$ 0,00"><span class="error-message" id="inputCustoPedreiroError"></span></div>
                     <div class="input-group"><label for="inputCustoServente">Servente:</label><input type="text" id="inputCustoServente" placeholder="R$ 0,00"><span class="error-message" id="inputCustoServenteError"></span></div>
                     <div class="input-group"><label for="inputCustoEncarregado">Encarregado:</label><input type="text" id="inputCustoEncarregado" placeholder="R$ 0,00"><span class="error-message" id="inputCustoEncarregadoError"></span></div>
+                    <div class="input-group"><label for="inputCustoImpermeabilizador">Impermeabilizador:</label><input type="text" id="inputCustoImpermeabilizador" placeholder="R$ 0,00"><span class="error-message" id="inputCustoImpermeabilizadorError"></span></div>
+                    <div class="input-group"><label for="inputCustoCarpinteiro">Carpinteiro:</label><input type="text" id="inputCustoCarpinteiro" placeholder="R$ 0,00"><span class="error-message" id="inputCustoCarpinteiroError"></span></div>
+                    <div class="input-group"><label for="inputCustoArmador">Armador:</label><input type="text" id="inputCustoArmador" placeholder="R$ 0,00"><span class="error-message" id="inputCustoArmadorError"></span></div>
                 </div>
                 <div class="config-section">
                     <h3>Preços de Materiais (Unidade)</h3>
-                    <div class="input-group"><label for="inputPrecoCimento">Cimento (saco 50kg):</label><input type="text" id="inputPrecoCimento" placeholder="R$ 0,00"><span class="error-message" id="inputPrecoCimentoError"></span></div>
-                    <div class="input-group"><label for="inputPrecoAreia">Areia (m³):</label><input type="text" id="inputPrecoAreia" placeholder="R$ 0,00"><span class="error-message" id="inputPrecoAreiaError"></span></div>
-                    <div class="input-group"><label for="inputPrecoBrita">Brita (m³):</label><input type="text" id="inputPrecoBrita" placeholder="R$ 0,00"><span class="error-message" id="inputPrecoBritaError"></span></div>
-                    <div class="input-group"><label for="inputPrecoTijolo">Tijolo (milheiro):</label><input type="text" id="inputPrecoTijolo" placeholder="R$ 0,00"><span class="error-message" id="inputPrecoTijoloError"></span></div>
-                    <div class="input-group"><label for="inputPrecoAco">Aço (kg):</label><input type="text" id="inputPrecoAco" placeholder="R$ 0,00"><span class="error-message" id="inputPrecoAcoError"></span></div>
-                    <div class="input-group"><label for="inputPrecoMadeira">Madeira (m³):</label><input type="text" id="inputPrecoMadeira" placeholder="R$ 0,00"><span class="error-message" id="inputPrecoMadeiraError"></span></div>
+                    <div id="materialPricesConfigContainer">
+                        <!-- Preços dos materiais serão populados aqui por config.js -->
+                    </div>
                 </div>
                 <div class="config-section">
                     <h3>Parâmetros Gerais</h3>
@@ -66,25 +65,22 @@
                     <div class="input-group"><label for="inputAreaObra">Área da Obra (m²):</label><input type="text" id="inputAreaObra" placeholder="1" aria-describedby="areaObraDesc"><span class="error-message" id="inputAreaObraError"></span><small class="sr-only" id="areaObraDesc">Insira a área total da obra em metros quadrados. Apenas números inteiros. Mínimo 1m².</small></div>
                 </div>
             </div>
-            <div class="config-actions"><button id="btnSalvarConfig" class="btn-primary">Salvar Configurações</button><button id="btnCarregarConfigPadrao" class="btn-secondary">Carregar Padrão</button></div>
+            <div class="config-actions"><button id="btnSalvarConfig" class="btn-primary">Aplicar Configurações</button><button id="btnCarregarConfigPadrao" class="btn-secondary">Carregar Padrão</button></div>
         </div>
 
-        <!-- Aba Calculadora (sem alteração estrutural aqui) -->
-        <div id="calculadora" class="tab-content">
+        <div id="calculadora" class="tab-content" role="tabpanel" aria-labelledby="tab-link-calculadora">
             <h2>Calculadora de Custos Diretos</h2>
-            <div class="calculadora-controls"><div class="input-group"><label for="selectServico">Adicionar Serviço:</label><select id="selectServico"><option value="">Selecione um serviço...</option></select><button id="btnAdicionarServico" class="btn-primary">Adicionar</button></div><div class="input-group search-group"><label for="inputPesquisaServico">Pesquisar Serviço na Tabela:</label><input type="search" id="inputPesquisaServico" placeholder="Digite para filtrar..."></div></div>
-            <div class="table-wrapper"><table><thead><tr><th>Serviço</th><th>Unidade</th><th>Quantidade</th><th>Custo Unit. Material (R$)</th><th>Custo Unit. M.O. (R$)</th><th>Custo Total (R$)</th><th>Ações</th></tr></thead><tbody id="tabelaCalculadoraItens"></tbody><tfoot><tr><td colspan="5" style="text-align: right; font-weight: bold;">Total Custo Direto:</td><td id="totalCalculadora" style="font-weight: bold;">R$ 0,00</td><td></td></tr></tfoot></table></div>
+            <div class="calculadora-controls"><div class="input-group"><label for="selectServico">Adicionar Serviço/Composição:</label><select id="selectServico"><option value="">Selecione um serviço...</option></select><button id="btnAdicionarServico" class="btn-primary">Adicionar</button></div><div class="input-group search-group"><label for="inputPesquisaServico">Pesquisar Serviço na Tabela:</label><input type="search" id="inputPesquisaServico" placeholder="Digite para filtrar..."></div></div>
+            <div class="table-wrapper"><table><thead><tr><th>Serviço/Composição</th><th>Unidade</th><th>Quantidade</th><th>Custo Unit. Material (R$)</th><th>Custo Unit. M.O. (R$)</th><th>Custo Total (R$)</th><th>Ações</th></tr></thead><tbody id="tabelaCalculadoraItens"></tbody><tfoot><tr><td colspan="5" style="text-align: right; font-weight: bold;">Total Custo Direto:</td><td id="totalCalculadora" style="font-weight: bold;">R$ 0,00</td><td></td></tr></tfoot></table></div>
         </div>
 
-        <!-- Aba Simulações BDI (sem alteração estrutural aqui) -->
-        <div id="simulacoes-bdi" class="tab-content">
-            <h2>Simulações de BDI</h2><p>Ajuste os percentuais abaixo para simular diferentes cenários de BDI. O BDI calculado pode ser aplicado às configurações gerais.</p>
+        <div id="simulacoes-bdi" class="tab-content" role="tabpanel" aria-labelledby="tab-link-simulacoes-bdi">
+             <h2>Simulações de BDI</h2><p>Ajuste os percentuais abaixo para simular diferentes cenários de BDI. O BDI calculado pode ser aplicado às configurações gerais.</p>
             <div class="bdi-simulations-grid"><div class="input-group"><label for="inputAdmin">Administração Central (%):</label><input type="text" id="inputAdmin" value="10.0"><span class="error-message" id="inputAdminError"></span></div><div class="input-group"><label for="inputRisco">Risco e Imprevistos (%):</label><input type="text" id="inputRisco" value="5.0"><span class="error-message" id="inputRiscoError"></span></div><div class="input-group"><label for="inputCustoFin">Custo Financeiro (%):</label><input type="text" id="inputCustoFin" value="1.0"><span class="error-message" id="inputCustoFinError"></span></div><div class="input-group"><label for="inputTributos">Tributos (ISS, PIS, COFINS) (%):</label><input type="text" id="inputTributos" value="5.0"><span class="error-message" id="inputTributosError"></span></div><div class="input-group"><label for="inputLucro">Lucro (%):</label><input type="text" id="inputLucro" value="15.0"><span class="error-message" id="inputLucroError"></span></div><div class="input-group"><label for="inputPercentMoBdi">% Faturamento que é M.O. (%):</label><input type="text" id="inputPercentMoBdi" value="40.0"><span class="error-message" id="inputPercentMoBdiError"></span></div></div>
             <div class="bdi-result"><strong>BDI Calculado: <span id="bdiCalculadoResultado">0,00%</span></strong><p>Baseado no Custo Direto Total da aba Calculadora:<br>Preço de Venda Estimado: <span id="precoVendaEstimado">R$ 0,00</span><br>Lucro Bruto Estimado: <span id="lucroBrutoEstimado">R$ 0,00</span></p><button id="btnAplicarBdiSimulado" class="btn-primary">Aplicar BDI Simulado às Configurações</button></div>
         </div>
 
-        <!-- Aba Resumo -->
-        <div id="resumo" class="tab-content">
+        <div id="resumo" class="tab-content" role="tabpanel" aria-labelledby="tab-link-resumo">
             <h2>Resumo Financeiro do Orçamento</h2>
             <div id="resumoConteudo" class="resumo-grid">
                 <div class="resumo-item"><span class="resumo-label">Custo Direto Total (CD):</span><span id="resumoCustoDireto" class="resumo-valor">R$ 0,00</span></div>
@@ -98,58 +94,49 @@
                 <div class="resumo-item"><span class="resumo-label">Representatividade M.O. no Custo Direto:</span><span id="resumoPercentMOnoCD" class="resumo-valor">0,00%</span></div>
                 <div class="resumo-item"><span class="resumo-label">Representatividade Materiais no Custo Direto:</span><span id="resumoPercentMaterialNoCD" class="resumo-valor">0,00%</span></div>
             </div>
-            <!-- MUDANÇA ABAIXO: Placeholder do gráfico de pizza -->
             <div class="graficos-container">
                 <h3>Distribuição de Custos (Material vs. M.O.)</h3>
                 <div class="grafico-wrapper" style="max-width: 400px; margin: 20px auto;">
                     <canvas id="graficoPizzaCustosCanvas"></canvas>
                 </div>
             </div>
-            <!-- FIM DA MUDANÇA -->
         </div>
 
-        <!-- Aba Listas (sem alteração estrutural aqui) -->
-        <div id="listas" class="tab-content">
+        <div id="listas" class="tab-content" role="tabpanel" aria-labelledby="tab-link-listas">
             <h2>Listas de Materiais e Serviços</h2>
-            <div class="listas-container"><section><h3>Lista de Serviços Quantificados</h3><div class="table-wrapper"><table id="tabelaListaServicos"><thead><tr><th>Serviço</th><th>Unidade</th><th>Quantidade</th><th>Custo Total (R$)</th></tr></thead><tbody></tbody></table></div></section><section><h3>Lista de Materiais Estimados</h3><div class="table-wrapper"><table id="tabelaListaMateriais"><thead><tr><th>Material</th><th>Unidade</th><th>Quantidade Estimada</th><th>Preço Unit. (R$)</th><th>Custo Total (R$)</th></tr></thead><tbody></tbody></table></div></section></div>
+            <div class="listas-container"><section><h3>Lista de Serviços Quantificados</h3><div class="table-wrapper"><table id="tabelaListaServicos"><thead><tr><th>Serviço/Composição</th><th>Unidade</th><th>Quantidade</th><th>Custo Total (R$)</th></tr></thead><tbody></tbody></table></div></section><section><h3>Lista de Materiais Estimados</h3><div class="table-wrapper"><table id="tabelaListaMateriais"><thead><tr><th>Material</th><th>Unidade</th><th>Quantidade Estimada</th><th>Preço Unit. (R$)</th><th>Custo Total (R$)</th></tr></thead><tbody></tbody></table></div></section></div>
         </div>
 
-        <!-- Aba Curva ABC -->
-        <div id="curva-abc" class="tab-content">
-            <h2>Curva ABC de Serviços</h2>
-            <p>A Curva ABC classifica os serviços pela sua representatividade no custo total direto.</p>
+        <div id="curva-abc" class="tab-content" role="tabpanel" aria-labelledby="tab-link-curva-abc">
+            <h2>Curva ABC de Serviços/Composições</h2>
+            <p>A Curva ABC classifica os serviços/composições pela sua representatividade no custo total direto.</p>
             <div class="table-wrapper">
                 <table id="tabelaCurvaABC">
-                    <thead><tr><th>Serviço</th><th>Custo Total (R$)</th><th>% Individual</th><th>% Acumulada</th><th>Classe</th></tr></thead>
+                    <thead><tr><th>Serviço/Composição</th><th>Custo Total (R$)</th><th>% Individual</th><th>% Acumulada</th><th>Classe</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
-            <!-- MUDANÇA ABAIXO: Placeholder do gráfico da Curva ABC -->
             <div class="graficos-container">
-                <h3>Gráfico da Curva ABC de Serviços</h3>
+                <h3>Gráfico da Curva ABC</h3>
                 <div class="grafico-wrapper" style="max-width: 800px; margin: 20px auto;">
                      <canvas id="graficoCurvaABCCanvas"></canvas>
                 </div>
             </div>
-            <!-- FIM DA MUDANÇA -->
         </div>
 
-        <!-- Aba Cronograma -->
-        <div id="cronograma" class="tab-content">
+        <div id="cronograma" class="tab-content" role="tabpanel" aria-labelledby="tab-link-cronograma">
             <h2>Cronograma Físico-Financeiro Estimado</h2>
             <p>Uma estimativa simplificada da distribuição dos custos ao longo do tempo.</p>
-            <div class="input-group"><label for="inputDuracaoEstimada">Duração Estimada da Obra (meses):</label><input type="number" id="inputDuracaoEstimada" value="6" min="1" step="1"></div>
+            <div class="input-group"><label for="inputDuracaoEstimada">Duração Estimada da Obra (meses):</label><input type="number" id="inputDuracaoEstimada" value="6" min="1" step="1"><span class="error-message" id="inputDuracaoEstimadaError"></span></div>
             <div class="table-wrapper"><table id="tabelaCronograma"><thead><tr><th>Mês</th><th>% Desembolso Acumulado (Estimado)</th><th>Valor Desembolsado no Mês (R$)</th><th>Valor Acumulado Desembolsado (R$)</th></tr></thead><tbody></tbody></table></div>
-            <!-- MUDANÇA ABAIXO: Placeholder do gráfico de Gantt -->
             <div class="graficos-container">
                 <h3>Gráfico de Gantt Estimado</h3>
                 <div class="grafico-wrapper">
                     <div id="graficoGanttContainer" style="margin: 20px 0;">
-                        <svg id="graficoGantt"></svg> <!-- Frappe Gantt usa SVG -->
+                        <svg id="graficoGantt"></svg>
                     </div>
                 </div>
             </div>
-            <!-- FIM DA MUDANÇA -->
         </div>
     </main>
 

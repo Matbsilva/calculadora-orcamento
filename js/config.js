@@ -1,27 +1,210 @@
 // js/config.js
-import { parseCurrency, formatCurrency, parsePercentage, formatPercentage } from './utils.js';
-import { ui } from './ui.js'; 
+import { formatCurrency, formatPercentage, parseFloatStrict } from './utils.js'; // parseFloatStrict de data.js não é mais necessário aqui
+import { ui } from './ui.js';
+// Importando diretamente do seu data.js as funções e o estado que precisamos
+import {
+    getLaborCosts, updateLaborCost,
+    getMaterialPrices, updateMaterialPrice, getMateriaisBase,
+    getBdiFinalAdotado, setBdiFinalAdotado,
+    getAreaObra, setAreaObra,
+    // Para resetar para os valores iniciais do seu data.js
+    laborCosts as initialLaborCosts, // Renomeando para evitar conflito com a função getter
+    materialPrices as initialMaterialPrices, // Renomeando
+    materiaisBase, // Para pegar os default prices
+    bdiFinalAdotado as initialBdiFinalAdotado,
+    areaObra as initialAreaObra
+} from './data.js';
 
 export const configManager = {
-    config: {
-        custoPedreiro: 150.00, custoServente: 100.00, custoEncarregado: 200.00,
-        precoCimento: 28.00, precoAreia: 120.00, precoBrita: 100.00,
-        precoTijolo: 700.00, precoAco: 7.50, precoMadeira: 2500.00,
-        bdiFinal: 25.0, areaObra: 100,
-        admin: 10.0, risco: 5.0, custoFin: 1.0, tributos: 5.0, lucro: 15.0, percentMoBdi: 40.0 
+    // Não há mais um objeto 'this.config' interno aqui.
+    // As operações leem/escrevem diretamente no estado de 'data.js'
+
+    init() {
+        this.populateMaterialPricesUI(); // Popula os campos de preço de material dinamicamente
+        this.loadConfigValuesToUI();   // Carrega os valores atuais de data.js para a UI
+        this.setupEventListeners();
     },
-    init() { this.loadConfig(); this.setupEventListeners(); this.updateUI(); },
-    setConfig(key, value) {
-        this.config[key] = value;
-        if (key === 'bdiFinal' || key === 'areaObra') { if (ui.updateAllTabs) ui.updateAllTabs(); }
-        if (ui.simulacoesBDI && ui.simulacoesBDI.camposBDI && ui.simulacoesBDI.camposBDI.map(k => k.toLowerCase()).includes(key.toLowerCase())) {
-             if (ui.simulacoesBDI.updateUIFromConfig) ui.simulacoesBDI.updateUIFromConfig(this.config);
+
+    loadConfigValuesToUI() {
+        const currentLaborCosts = getLaborCosts();
+        // Campos de Custo de Mão de Obra
+        for (const prof in currentLaborCosts) {
+            const inputId = `inputCusto${prof.charAt(0).toUpperCase() + prof.slice(1)}`;
+            const inputElement = document.getElementById(inputId);
+            if (inputElement) {
+                inputElement.value = formatCurrency(currentLaborCosts[prof]);
+                if (ui.clearInputError) ui.clearInputError(inputElement);
+            }
+        }
+
+        // Campos de Preço de Material (já populados por populateMaterialPricesUI, aqui apenas atualiza valores)
+        const currentMaterialPrices = getMaterialPrices();
+        for (const matId in currentMaterialPrices) {
+            const inputElement = document.getElementById(`inputPreco${matId}`);
+            if (inputElement) {
+                inputElement.value = formatCurrency(currentMaterialPrices[matId]);
+                if (ui.clearInputError) ui.clearInputError(inputElement);
+            }
+        }
+        
+        // Parâmetros Gerais
+        const inputBdi = document.getElementById('inputBdiFinal');
+        if (inputBdi) {
+            inputBdi.value = formatPercentage(getBdiFinalAdotado());
+            if (ui.clearInputError) ui.clearInputError(inputBdi);
+        }
+        const inputArea = document.getElementById('inputAreaObra');
+        if (inputArea) {
+            inputArea.value = `${getAreaObra()} m²`; // Formatado com unidade
+            if (ui.clearInputError) ui.clearInputError(inputArea);
         }
     },
-    getConfig(key) { if (key) return this.config[key]; return { ...this.config }; },
-    saveConfig() { /* ... (código igual ao fornecido anteriormente) ... */ try { localStorage.setItem('orcamentoConfig', JSON.stringify(this.config)); alert('Configurações salvas com sucesso!'); } catch (error) { console.error("Erro ao salvar configurações:", error); alert('Erro ao salvar configurações. Verifique o console para mais detalhes.'); } },
-    loadConfig() { /* ... (código igual ao fornecido anteriormente) ... */ try { const savedConfig = localStorage.getItem('orcamentoConfig'); if (savedConfig) { const parsedConfig = JSON.parse(savedConfig); this.config = { ...this.config, ...parsedConfig }; } } catch (error) { console.error("Erro ao carregar configurações:", error); } },
-    resetToDefaults() { /* ... (código igual ao fornecido anteriormente) ... */ this.config = { custoPedreiro: 150.00, custoServente: 100.00, custoEncarregado: 200.00, precoCimento: 28.00, precoAreia: 120.00, precoBrita: 100.00, precoTijolo: 700.00, precoAco: 7.50, precoMadeira: 2500.00, bdiFinal: 25.0, areaObra: 100, admin: 10.0, risco: 5.0, custoFin: 1.0, tributos: 5.0, lucro: 15.0, percentMoBdi: 40.0 }; this.updateUI(); if (ui.simulacoesBDI && ui.simulacoesBDI.updateUIFromConfig) { ui.simulacoesBDI.updateUIFromConfig(this.config); } if (ui.updateAllTabs) ui.updateAllTabs(); },
-    updateUI() { /* ... (código igual ao fornecido anteriormente, com ui.clearInputError) ... */ const fieldsToUpdate = { 'inputCustoPedreiro': formatCurrency(this.config.custoPedreiro), 'inputCustoServente': formatCurrency(this.config.custoServente), 'inputCustoEncarregado': formatCurrency(this.config.custoEncarregado), 'inputPrecoCimento': formatCurrency(this.config.precoCimento), 'inputPrecoAreia': formatCurrency(this.config.precoAreia), 'inputPrecoBrita': formatCurrency(this.config.precoBrita), 'inputPrecoTijolo': formatCurrency(this.config.precoTijolo), 'inputPrecoAco': formatCurrency(this.config.precoAco), 'inputPrecoMadeira': formatCurrency(this.config.precoMadeira), 'inputBdiFinal': formatPercentage(this.config.bdiFinal), 'inputAreaObra': `${this.config.areaObra} m²` }; for (const id in fieldsToUpdate) { const element = document.getElementById(id); if (element) { element.value = fieldsToUpdate[id]; if (ui.clearInputError) ui.clearInputError(element); } } },
-    setupEventListeners() { /* ... (código igual ao fornecido anteriormente, com feedback visual) ... */ const configFieldsCurrency = [ 'inputCustoPedreiro', 'inputCustoServente', 'inputCustoEncarregado', 'inputPrecoCimento', 'inputPrecoAreia', 'inputPrecoBrita', 'inputPrecoTijolo', 'inputPrecoAco', 'inputPrecoMadeira' ]; configFieldsCurrency.forEach(id => { const input = document.getElementById(id); if (input) { input.addEventListener('blur', (event) => { const { value, isValid } = ui.formatCurrencyInputOnBlur(event); if (isValid) { const configKey = id.replace('input', '').charAt(0).toLowerCase() + id.replace('input', '').slice(1); this.setConfig(configKey, value); if (ui.calculadora && ui.calculadora.recalcularTodosOsCustos) ui.calculadora.recalcularTodosOsCustos(); if (ui.updateAllTabs) ui.updateAllTabs(); } }); input.addEventListener('focus', () => { if (ui.clearInputError) ui.clearInputError(input); }); } }); const inputBdiFinal = document.getElementById('inputBdiFinal'); if (inputBdiFinal) { inputBdiFinal.addEventListener('blur', (event) => { const { value, isValid } = ui.formatPercentageInputOnBlur(event, 0, 1000); if (isValid) { this.setConfig('bdiFinal', value); if (ui.updateAllTabs) ui.updateAllTabs(); } }); inputBdiFinal.addEventListener('focus', () => { if (ui.clearInputError) ui.clearInputError(inputBdiFinal); }); } const btnSalvar = document.getElementById('btnSalvarConfig'); if (btnSalvar) btnSalvar.addEventListener('click', () => this.saveConfig()); const btnCarregarPadrao = document.getElementById('btnCarregarConfigPadrao'); if (btnCarregarPadrao) { btnCarregarPadrao.addEventListener('click', () => { if (confirm('Deseja carregar as configurações padrão? As alterações não salvas serão perdidas.')) { this.resetToDefaults(); alert('Configurações padrão carregadas.'); } }); } }
+    
+    populateMaterialPricesUI() {
+        const container = document.getElementById('materialPricesConfigContainer');
+        if (!container) return;
+        container.innerHTML = ''; // Limpa container
+
+        const currentMaterialPrices = getMaterialPrices(); // Pega os preços atuais (podem ter sido carregados)
+        const baseMaterials = getMateriaisBase();       // Pega a estrutura base com nomes e unidades
+
+        for (const materialId in baseMaterials) {
+            const materialInfo = baseMaterials[materialId];
+            const price = currentMaterialPrices[materialId] !== undefined ? currentMaterialPrices[materialId] : materialInfo.precoUnitarioDefault;
+
+            const group = document.createElement('div');
+            group.classList.add('input-group');
+
+            const label = document.createElement('label');
+            label.setAttribute('for', `inputPreco${materialId}`);
+            label.textContent = `${materialInfo.nomeDisplay} (${materialInfo.unidade}):`; // Usa nomeDisplay e unidade
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = `inputPreco${materialId}`;
+            input.value = formatCurrency(price);
+            input.setAttribute('data-material-id', materialId); // Para identificar o material no event listener
+
+            const errorSpan = document.createElement('span');
+            errorSpan.classList.add('error-message');
+            errorSpan.id = `inputPreco${materialId}Error`;
+
+            group.appendChild(label);
+            group.appendChild(input);
+            group.appendChild(errorSpan);
+            container.appendChild(group);
+        }
+    },
+
+    resetToDefaults() {
+        // Reseta os valores no data.js para os iniciais
+        for (const prof in initialLaborCosts) {
+            updateLaborCost(prof, initialLaborCosts[prof]);
+        }
+        for (const matId in materiaisBase) { // Usa materiaisBase para pegar os defaults
+            updateMaterialPrice(matId, materiaisBase[matId].precoUnitarioDefault);
+        }
+        setBdiFinalAdotado(initialBdiFinalAdotado);
+        setAreaObra(initialAreaObra);
+
+        this.loadConfigValuesToUI(); // Atualiza a UI com os valores resetados
+        
+        if (ui.calculadora && ui.calculadora.recalcularTodosOsCustos) ui.calculadora.recalcularTodosOsCustos();
+        if (ui.updateAllTabs) ui.updateAllTabs();
+    },
+
+    // saveConfig e loadConfig (para localStorage) foram movidos para persistencia.js
+    // e gerenciados globalmente, pois salvam/carregam todo o orçamento.
+    // O botão "Salvar Configurações" na UI agora apenas confirma que os valores estão no data.js
+    // A persistência real acontece com "Salvar Orçamento"
+    
+    handleSaveLocalConfig() { // Chamado pelo botão "Salvar Configurações"
+        // Esta função agora serve mais como uma confirmação ou um gatilho para salvar o estado
+        // completo do orçamento, se desejado, ou apenas garantir que data.js está atualizado.
+        // Por simplicidade, vamos assumir que data.js já é a fonte da verdade e
+        // o "Salvar Orçamento" global cuida da persistência.
+        // Se quisermos um localStorage específico para configurações, essa lógica iria aqui.
+        alert('Configurações aplicadas. Use "Salvar Orçamento" para persistir todas as alterações.');
+    },
+
+
+    setupEventListeners() {
+        // Mão de Obra
+        const laborCostInputs = [
+            'inputCustoPedreiro', 'inputCustoServente', 'inputCustoEncarregado',
+            'inputCustoImpermeabilizador', 'inputCustoCarpinteiro', 'inputCustoArmador'
+        ];
+        laborCostInputs.forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.addEventListener('blur', (event) => {
+                    const { value, isValid } = ui.formatCurrencyInputOnBlur(event);
+                    if (isValid) {
+                        const professionalKey = id.replace('inputCusto', '').toLowerCase();
+                        updateLaborCost(professionalKey, value); // Atualiza em data.js
+                        if (ui.calculadora && ui.calculadora.recalcularTodosOsCustos) ui.calculadora.recalcularTodosOsCustos();
+                        if (ui.updateAllTabs) ui.updateAllTabs();
+                    }
+                });
+                input.addEventListener('focus', () => { if (ui.clearInputError) ui.clearInputError(input); });
+            }
+        });
+
+        // Preços de Materiais (delegado, pois são criados dinamicamente)
+        const materialPricesContainer = document.getElementById('materialPricesConfigContainer');
+        if (materialPricesContainer) {
+            materialPricesContainer.addEventListener('blur', (event) => {
+                const target = event.target;
+                if (target.tagName === 'INPUT' && target.id.startsWith('inputPreco')) {
+                    const { value, isValid } = ui.formatCurrencyInputOnBlur(event);
+                    if (isValid) {
+                        const materialId = target.dataset.materialId;
+                        updateMaterialPrice(materialId, value); // Atualiza em data.js
+                        if (ui.calculadora && ui.calculadora.recalcularTodosOsCustos) ui.calculadora.recalcularTodosOsCustos();
+                        if (ui.updateAllTabs) ui.updateAllTabs();
+                    }
+                }
+            }, true); // Use capturing para o evento blur em elementos dinâmicos
+
+            materialPricesContainer.addEventListener('focus', (event) => {
+                const target = event.target;
+                if (target.tagName === 'INPUT' && target.id.startsWith('inputPreco')) {
+                    if (ui.clearInputError) ui.clearInputError(target);
+                }
+            }, true);
+        }
+        
+        // Parâmetros Gerais
+        const inputBdiFinal = document.getElementById('inputBdiFinal');
+        if (inputBdiFinal) {
+            inputBdiFinal.addEventListener('blur', (event) => {
+                const { value, isValid } = ui.formatPercentageInputOnBlur(event, 0, 1000);
+                if (isValid) {
+                    setBdiFinalAdotado(value); // Atualiza em data.js
+                    if (ui.updateAllTabs) ui.updateAllTabs();
+                }
+            });
+            inputBdiFinal.addEventListener('focus', () => { if (ui.clearInputError) ui.clearInputError(inputBdiFinal); });
+        }
+        
+        // Listener para inputAreaObra já está em ui.js devido à sua formatação específica (com " m²")
+
+        // Botões
+        const btnSalvar = document.getElementById('btnSalvarConfig');
+        // O botão "Salvar Configurações" agora é mais um "Aplicar Mudanças Locais",
+        // a persistência real é feita pelo "Salvar Orçamento" global.
+        // Poderíamos fazer um localStorage.setItem('configSnapshot', JSON.stringify({laborCosts: getLaborCosts(), ...}))
+        // aqui se quiséssemos uma persistência leve só das configs. Por ora, vamos simplificar.
+        if (btnSalvar) btnSalvar.addEventListener('click', () => this.handleSaveLocalConfig()); 
+        
+        const btnCarregarPadrao = document.getElementById('btnCarregarConfigPadrao');
+        if (btnCarregarPadrao) {
+            btnCarregarPadrao.addEventListener('click', () => {
+                if (confirm('Deseja carregar as configurações padrão? As alterações atuais (não salvas no orçamento) serão perdidas.')) {
+                    this.resetToDefaults();
+                    alert('Configurações padrão carregadas e aplicadas.');
+                }
+            });
+        }
+    }
 };
