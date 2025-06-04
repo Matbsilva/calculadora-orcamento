@@ -3,159 +3,536 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Orçamento de Obra</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Favicon links (remova ou substitua se não tiver os arquivos) -->
-    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
-    <link rel="manifest" href="favicon/site.webmanifest">
+    <title>Calculadora de Orçamento Detalhada</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --cor-principal-azul: #1E3A8A;
+            --cor-principal-azul-hover: #1E40AF;
+            --cor-borda-destaque-azul: #1E3A8A; /* Used for thicker borders */
+            --cor-fundo-body: #E5E7EB;
+            --cor-container-branco: #FFFFFF;
+            --cor-fundo-secao-principal: #F3F4F6;
+            --cor-texto-preto: #1F2937;
+            --cor-texto-secundario-cinza: #6B7280;
+            --cor-borda-cinza: #D1D5DB;
+            --cor-aba-inativa-fundo: #E5E7EB;
+            --cor-aba-inativa-texto: #4B5563;
+            --cor-botao-secundario-fundo: #4B5563;
+            --cor-botao-secundario-hover: #374151;
+            --cor-botao-terciario-fundo: #3B82F6;
+            --cor-botao-terciario-hover: #2563EB;
+        }
+        html {
+            box-sizing: border-box;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--cor-fundo-body); 
+            color: var(--cor-texto-preto);
+            padding-left: 1cm; 
+            padding-right: 1cm; 
+        }
+        .container {
+            width: 100%; 
+            max-width: 1900px; 
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            padding: 1.2rem; 
+            background-color: var(--cor-container-branco);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3, h4 { color: var(--cor-principal-azul); font-weight: 600; }
+        .tab-buttons button { padding: 0.75rem 1.5rem; margin-right: 0.5rem; border-radius: 8px 8px 0 0; background-color: var(--cor-aba-inativa-fundo); color: var(--cor-aba-inativa-texto); font-weight: 500; border: 1px solid var(--cor-borda-cinza); border-bottom: none; outline: none; cursor: pointer; }
+        .tab-buttons button.active { background-color: var(--cor-principal-azul); color: var(--cor-container-branco); border-color: var(--cor-principal-azul); }
+        .tab-content { display: none; padding: 1.5rem; border: 1px solid var(--cor-borda-cinza); border-top: none; border-radius: 0 0 8px 8px; background-color: var(--cor-fundo-secao-principal); min-height: 300px; }
+        .tab-content.active { display: block; }
+        #tab-configuracoes, #tab-simulacoes { background-color: var(--cor-aba-inativa-fundo); }
 
-    <!-- ADIÇÃO: CDN do Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- ADIÇÃO: CDN do Frappe Gantt (JS e CSS) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
-    <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
+        table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.8rem; }
+        th, td { padding: 0.6rem 0.4rem; text-align: left; border-bottom: 1px solid var(--cor-borda-cinza); }
+        #main-budget-table td, #main-budget-table th { border-left: 1px solid var(--cor-borda-cinza); }
+        #main-budget-table td:first-child, #main-budget-table th:first-child { border-left: none; }
+        
+        thead.header-sticky th { background-color: var(--cor-container-branco); color: var(--cor-texto-preto); border-top: 1px solid var(--cor-borda-cinza); }
+        #budget-items tr:first-child td { border-top: 1px solid var(--cor-borda-cinza); }
+        #budget-items td {
+            vertical-align: top;
+        }
+        
+        #main-budget-table th.col-quantidade,
+        #main-budget-table th.th-borda-custo-unit-total,
+        #main-budget-table th.th-borda-custo-item-total,
+        #main-budget-table th.th-borda-preco-venda-item,    
+        #main-budget-table th.col-produtividade:last-of-type 
+        { border-right: 2px solid var(--cor-borda-destaque-azul); }
+
+        #budget-items td.col-quantidade,
+        #budget-items td.td-borda-custo-unit-total,
+        #budget-items td.td-borda-custo-item-total,
+        #budget-items td.td-borda-preco-venda-item,
+        #budget-items td.col-produtividade:last-of-type
+        { border-right: 2px solid var(--cor-borda-destaque-azul); }
+
+
+        #main-budget-table td:last-child, #main-budget-table th:last-child { border-right: none; }
+
+
+        td input[type="number"] { width: 70px; padding: 0.4rem; border: 1px solid var(--cor-borda-cinza); border-radius: 6px; text-align: right; font-size: 0.8rem; color: var(--cor-texto-preto); }
+        td input[type="number"]:focus { border-color: var(--cor-principal-azul); outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--cor-principal-azul) 20%, transparent); }
+        .total-row td { font-weight: 600; color: var(--cor-principal-azul); border-top: 2px solid var(--cor-principal-azul); padding-top: 0.75rem; background-color: var(--cor-fundo-secao-principal); }
+        .currency, .number-value { white-space: nowrap; text-align: right; }
+        .item-description { font-weight: 500; min-width: 180px; }
+        .unit-measure { color: var(--cor-texto-secundario-cinza); font-size: 0.85em; text-align: center; }
+        .header-sticky { position: sticky; top: 0; z-index: 10; }
+        .table-container { overflow-x: auto; border: 1px solid var(--cor-borda-cinza); border-radius: 8px; margin-top:1rem; }
+        .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
+        .table-container::-webkit-scrollbar-track { background: var(--cor-aba-inativa-fundo); border-radius: 10px; }
+        .table-container::-webkit-scrollbar-thumb { background: var(--cor-principal-azul); border-radius: 10px; }
+        .table-container::-webkit-scrollbar-thumb:hover { background: var(--cor-principal-azul-hover); }
+        .action-buttons-group { border: 1px solid var(--cor-borda-cinza); padding: 0.5rem; border-radius: 8px; display: inline-block;}
+        .search-filter-group { border: 1px solid var(--cor-borda-cinza); padding: 1rem; border-radius: 8px; margin-bottom:1rem; }
+        .report-section h4, .simulacao-section h3 { font-size: 1.25rem; margin-bottom: 0.75rem; border-bottom: 2px solid var(--cor-principal-azul-hover); padding-bottom: 0.25rem; color: var(--cor-principal-azul);}
+        .simulacao-section { margin-bottom: 2rem; background-color: var(--cor-container-branco); padding:1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .simulacao-section label { font-weight: 500; display: block; margin-bottom: 0.25rem; color: var(--cor-texto-preto)}
+        .simulacao-section p { margin-bottom: 0.5rem; }
+        .simulacao-input { width: 100px; padding: 0.4rem; border: 1px solid var(--cor-borda-cinza); border-radius: 6px; text-align: right; font-size: 0.8rem; color: var(--cor-texto-preto); }
+        .simulacao-input:focus { border-color: var(--cor-principal-azul); outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--cor-principal-azul) 20%, transparent); }
+        .simulacao-input-editavel { background-color: var(--cor-input-editavel-fundo, #DBEAFE); border-color: var(--cor-input-editavel-borda, #93C5FD); }
+        .simulacao-input-automatico { background-color: var(--cor-input-automatico-fundo, #F3F4F6); color: var(--cor-input-automatico-texto, #374151); cursor: not-allowed; }
+        .simulacao-bdi-field { font-weight: bold; color: var(--cor-principal-azul); } 
+        .simulacao-detailed-table { margin-top: 1rem; width: auto; min-width: 400px; }
+        .simulacao-detailed-table td, .simulacao-detailed-table th { padding: 0.4rem 0.6rem; font-size: 0.8rem;}
+        .simulacao-detailed-table td:first-child { font-weight: 500; }
+        .simulacao-detailed-table td:last-child { text-align: right; }
+
+        .report-table { font-size: 0.85em; width: 100%; margin-bottom: 1rem; border-collapse: collapse; }
+        .report-table th, .report-table td { padding: 0.5rem; border: 1px solid var(--cor-borda-cinza); text-align: left; }
+        .report-table th { background-color: color-mix(in srgb, var(--cor-principal-azul) 10%, var(--cor-fundo-secao-principal) 90%); color: var(--cor-principal-azul); }
+        .report-table td.number-value, .report-table td.currency { text-align: right; }
+        .action-button { background-color: var(--cor-principal-azul); color: var(--cor-container-branco); padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 500; transition: background-color 0.3s; cursor: pointer; border: none; margin: 0.25rem; }
+        .action-button:hover { background-color: var(--cor-principal-azul-hover); }
+        .secondary-button { background-color: var(--cor-botao-secundario-fundo); color: var(--cor-container-branco); }
+        .secondary-button:hover { background-color: var(--cor-botao-secundario-hover); }
+        .tertiary-button { background-color: var(--cor-botao-terciario-fundo); color: var(--cor-container-branco); }
+        .tertiary-button:hover { background-color: var(--cor-botao-terciario-hover); }
+        .copy-button { background-color: var(--cor-texto-secundario-cinza); color: var(--cor-container-branco); padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 4px; margin-left: 10px; cursor: pointer; }
+        .copy-button:hover { background-color: var(--cor-botao-secundario-fundo); }
+        .config-section { background-color: var(--cor-container-branco); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--cor-borda-cinza); }
+        .config-section label { color: var(--cor-principal-azul); margin-right: 0.5rem; font-weight: 500; }
+        .config-section input[type="number"]{ border: 1px solid var(--cor-borda-cinza); width: 100px; padding: 0.3rem 0.5rem; border-radius: 4px; margin-right: 1rem; margin-bottom: 0.5rem;}
+        .material-config-item { display: flex; flex-wrap: wrap; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px dashed var(--cor-borda-cinza); }
+        .material-config-item:last-child { border-bottom: none; }
+        .material-config-item label { min-width: 250px; }
+        .material-config-item span { color: var(--cor-principal-azul-hover); margin-left: 0.5rem; margin-right: 1rem; }
+        .summary-section-title { color: var(--cor-principal-azul); margin-top: 1.5rem; margin-bottom: 0.5rem; font-size: 1.1rem; font-weight:600; display: flex; justify-content: space-between; align-items: center; }
+        .note-text { color: var(--cor-texto-secundario-cinza); }
+        .filter-container { margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .filter-container label { font-weight: 500; }
+        .filter-container select { padding: 0.5rem; border-radius: 6px; border: 1px solid var(--cor-borda-cinza); min-width: 200px;}
+        .cost-indicator-bar-container { width: 20px; height: 10px; background-color: #e9ecef; border-radius: 5px; overflow: hidden; display: inline-block; margin-right: 8px; vertical-align: middle; border: 1px solid #ced4da;}
+        .cost-indicator-bar { height: 100%; transition: width 0.3s ease-in-out; }
+
+       
+        #main-budget-table.modo-cotacao-ativo .col-custo-unit,
+        #main-budget-table.modo-cotacao-ativo .col-custo-total,
+        #main-budget-table.modo-cotacao-ativo .col-bdi,
+        #main-budget-table.modo-cotacao-ativo .col-produtividade {
+            display: none !important;
+        }
+        
+        #main-budget-table.modo-cotacao-ativo #grand-total-material,
+        #main-budget-table.modo-cotacao-ativo #grand-total-labor,
+        #main-budget-table.modo-cotacao-ativo #grand-total-cost,
+        #main-budget-table.modo-cotacao-ativo #grand-total-sell-price,
+        #main-budget-table.modo-cotacao-ativo #grand-total-hh-prof,
+        #main-budget-table.modo-cotacao-ativo #grand-total-hh-helper {
+            display: none !important;
+        }
+        #main-budget-table.modo-cotacao-ativo .total-row td.col-bdi-empty,
+        #main-budget-table.modo-cotacao-ativo .total-row td.col-produtividade {
+            display: none !important;
+        }
+
+        #main-budget-table.modo-cotacao-ativo #label-total-custo {
+            colspan: 4; 
+            text-align: right;
+        }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+        .input-error {
+            border-color: red !important;
+            box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.3) !important;
+        }
+        .validation-message {
+            color: red;
+            font-size: 0.75rem; 
+            margin-left: 0.25rem; 
+            display: none; 
+        }
+
+
+        @media (max-width: 1024px) { .container { padding: 1rem; } table, .report-table { font-size: 0.75rem; } th, td, .report-table th, .report-table td { padding: 0.5rem 0.3rem; } td input[type="number"] { width: 60px; } h1 { font-size: 1.25rem; } .action-button { padding: 0.6rem 1rem; font-size: 0.9rem;} .config-section div:not(.bdi-input-group) { margin-bottom: 0.5rem; } .material-config-item label { min-width: 200px; } .filter-container {flex-direction: column; align-items: flex-start;} .filter-container select, .filter-container label[for="mode-cotacao-toggle"] {width: 100%; margin-left:0;} }
+        @media (max-width: 640px) { .tab-buttons { display: flex; flex-wrap: wrap; } .tab-buttons button { margin-bottom: 0.25rem; flex-grow: 1; } .config-section { display: flex; flex-direction: column; align-items: flex-start; } .config-section div.flex-wrap > div:not(.bdi-input-group div) { margin-bottom: 0.5rem; display: flex; flex-direction: column; align-items: flex-start; width: 100%; } .config-section label { margin-bottom: 0.25rem;} .config-section input[type="number"], .config-section input[type="text"] { width: 100%; margin-right: 0; margin-bottom: 0.5rem;} #update-labor-costs-button, #update-material-costs-button, #update-bdi-button, #sim-recalcular-bdi-tudo, #sim-aplicar-bdi-calculadora, #update-other-configs-button { width: 100%; margin-top: 0.5rem;} .material-config-item { flex-direction: column; align-items: flex-start; } .material-config-item label { min-width: auto; } .material-config-item span { margin-left: 0; margin-right: 0.5rem; } #calculator-actions button { width: 100%; margin-bottom: 0.5rem; } .search-container { flex-direction: column;} .search-container button { width:100%; margin-left:0; margin-top:0.5rem;} .action-buttons-group {display:block; text-align: center;} .simulacao-section .grid div { margin-bottom: 0.5rem;} }
+    </style>
 </head>
-<body>
-    <header>
-        <h1>Calculadora de Orçamento de Obra</h1>
-        <div class="header-controls">
-            <button id="btnSalvarOrcamento" class="btn-header">Salvar Orçamento</button>
-            <label for="inputCarregarOrcamento" class="btn-header btn-file-label">
-                Carregar Orçamento
-                <input type="file" id="inputCarregarOrcamento" accept=".json" style="display: none;">
-            </label>
-            <button id="btnResetarAplicacao" class="btn-header btn-danger">Resetar Aplicação</button>
-        </div>
-    </header>
+<body class=""> 
+    <div class="container">
+        <h1 class="text-2xl text-center mb-6">Calculadora Detalhada de Orçamento e Insumos</h1>
 
-    <main>
-        <nav class="tab-nav">
-            <button class="tab-link active" data-tab="configuracoes">Configurações</button>
-            <button class="tab-link" data-tab="calculadora">Calculadora</button>
-            <button class="tab-link" data-tab="simulacoes-bdi">Simulações BDI</button>
-            <button class="tab-link" data-tab="resumo">Resumo</button>
-            <button class="tab-link" data-tab="listas">Listas</button>
-            <button class="tab-link" data-tab="curva-abc">Curva ABC</button>
-            <button class="tab-link" data-tab="cronograma">Cronograma Estimado</button>
-        </nav>
-
-        <!-- Aba Configurações (sem alteração estrutural aqui) -->
-        <div id="configuracoes" class="tab-content active">
-            <h2>Configurações Gerais e Custos</h2>
-            <div class="config-grid">
-                <div class="config-section">
-                    <h3>Custos de Mão de Obra (R$/Dia)</h3>
-                    <div class="input-group"><label for="inputCustoPedreiro">Pedreiro:</label><input type="text" id="inputCustoPedreiro" placeholder="R$ 0,00"><span class="error-message" id="inputCustoPedreiroError"></span></div>
-                    <div class="input-group"><label for="inputCustoServente">Servente:</label><input type="text" id="inputCustoServente" placeholder="R$ 0,00"><span class="error-message" id="inputCustoServenteError"></span></div>
-                    <div class="input-group"><label for="inputCustoEncarregado">Encarregado:</label><input type="text" id="inputCustoEncarregado" placeholder="R$ 0,00"><span class="error-message" id="inputCustoEncarregadoError"></span></div>
-                </div>
-                <div class="config-section">
-                    <h3>Preços de Materiais (Unidade)</h3>
-                    <div class="input-group"><label for="inputPrecoCimento">Cimento (saco 50kg):</label><input type="text" id="inputPrecoCimento" placeholder="R$ 0,00"><span class="error-message" id="inputPrecoCimentoError"></span></div>
-                    <div class="input-group"><label for="inputPrecoAreia">Areia (m³):</label><input type="text" id="inputPrecoAreia" placeholder="R$ 0,00"><span class="error-message" id="inputPrecoAreiaError"></span></div>
-                    <div class="input-group"><label for="inputPrecoBrita">Brita (m³):</label><input type="text" id="inputPrecoBrita" placeholder="R$ 0,00"><span class="error-message" id="inputPrecoBritaError"></span></div>
-                    <div class="input-group"><label for="inputPrecoTijolo">Tijolo (milheiro):</label><input type="text" id="inputPrecoTijolo" placeholder="R$ 0,00"><span class="error-message" id="inputPrecoTijoloError"></span></div>
-                    <div class="input-group"><label for="inputPrecoAco">Aço (kg):</label><input type="text" id="inputPrecoAco" placeholder="R$ 0,00"><span class="error-message" id="inputPrecoAcoError"></span></div>
-                    <div class="input-group"><label for="inputPrecoMadeira">Madeira (m³):</label><input type="text" id="inputPrecoMadeira" placeholder="R$ 0,00"><span class="error-message" id="inputPrecoMadeiraError"></span></div>
-                </div>
-                <div class="config-section">
-                    <h3>Parâmetros Gerais</h3>
-                    <div class="input-group"><label for="inputBdiFinal">BDI Final Adotado (%):</label><input type="text" id="inputBdiFinal" placeholder="0%"><span class="error-message" id="inputBdiFinalError"></span></div>
-                    <div class="input-group"><label for="inputAreaObra">Área da Obra (m²):</label><input type="text" id="inputAreaObra" placeholder="1" aria-describedby="areaObraDesc"><span class="error-message" id="inputAreaObraError"></span><small class="sr-only" id="areaObraDesc">Insira a área total da obra em metros quadrados. Apenas números inteiros. Mínimo 1m².</small></div>
-                </div>
-            </div>
-            <div class="config-actions"><button id="btnSalvarConfig" class="btn-primary">Salvar Configurações</button><button id="btnCarregarConfigPadrao" class="btn-secondary">Carregar Padrão</button></div>
+        <div class="tab-buttons mb-0" role="tablist" aria-label="Navegação principal da calculadora">
+            <button type="button" class="tab-button" data-tab="tab-configuracoes" id="tab-btn-configuracoes" role="tab" aria-selected="false" aria-controls="tab-configuracoes" tabindex="-1">Configurações</button>
+            <button type="button" class="tab-button active" data-tab="tab-calculadora" id="tab-btn-calculadora" role="tab" aria-selected="true" aria-controls="tab-calculadora" tabindex="0">Calculadora</button>
+            <button type="button" class="tab-button" data-tab="tab-simulacoes" id="tab-btn-simulacoes" role="tab" aria-selected="false" aria-controls="tab-simulacoes" tabindex="-1">Simulações BDI</button>
+            <button type="button" class="tab-button" data-tab="tab-resumo" id="tab-btn-resumo" role="tab" aria-selected="false" aria-controls="tab-resumo" tabindex="-1">Resumo e Listas</button>
+            <button type="button" class="tab-button" data-tab="tab-curva-abc" id="tab-btn-curva-abc" role="tab" aria-selected="false" aria-controls="tab-curva-abc" tabindex="-1">Curva ABC</button>
+            <button type="button" class="tab-button" data-tab="tab-cronograma" id="tab-btn-cronograma" role="tab" aria-selected="false" aria-controls="tab-cronograma" tabindex="-1">Cronograma Estimado</button>
         </div>
 
-        <!-- Aba Calculadora (sem alteração estrutural aqui) -->
-        <div id="calculadora" class="tab-content">
-            <h2>Calculadora de Custos Diretos</h2>
-            <div class="calculadora-controls"><div class="input-group"><label for="selectServico">Adicionar Serviço:</label><select id="selectServico"><option value="">Selecione um serviço...</option></select><button id="btnAdicionarServico" class="btn-primary">Adicionar</button></div><div class="input-group search-group"><label for="inputPesquisaServico">Pesquisar Serviço na Tabela:</label><input type="search" id="inputPesquisaServico" placeholder="Digite para filtrar..."></div></div>
-            <div class="table-wrapper"><table><thead><tr><th>Serviço</th><th>Unidade</th><th>Quantidade</th><th>Custo Unit. Material (R$)</th><th>Custo Unit. M.O. (R$)</th><th>Custo Total (R$)</th><th>Ações</th></tr></thead><tbody id="tabelaCalculadoraItens"></tbody><tfoot><tr><td colspan="5" style="text-align: right; font-weight: bold;">Total Custo Direto:</td><td id="totalCalculadora" style="font-weight: bold;">R$ 0,00</td><td></td></tr></tfoot></table></div>
-        </div>
-
-        <!-- Aba Simulações BDI (sem alteração estrutural aqui) -->
-        <div id="simulacoes-bdi" class="tab-content">
-            <h2>Simulações de BDI</h2><p>Ajuste os percentuais abaixo para simular diferentes cenários de BDI. O BDI calculado pode ser aplicado às configurações gerais.</p>
-            <div class="bdi-simulations-grid"><div class="input-group"><label for="inputAdmin">Administração Central (%):</label><input type="text" id="inputAdmin" value="10.0"><span class="error-message" id="inputAdminError"></span></div><div class="input-group"><label for="inputRisco">Risco e Imprevistos (%):</label><input type="text" id="inputRisco" value="5.0"><span class="error-message" id="inputRiscoError"></span></div><div class="input-group"><label for="inputCustoFin">Custo Financeiro (%):</label><input type="text" id="inputCustoFin" value="1.0"><span class="error-message" id="inputCustoFinError"></span></div><div class="input-group"><label for="inputTributos">Tributos (ISS, PIS, COFINS) (%):</label><input type="text" id="inputTributos" value="5.0"><span class="error-message" id="inputTributosError"></span></div><div class="input-group"><label for="inputLucro">Lucro (%):</label><input type="text" id="inputLucro" value="15.0"><span class="error-message" id="inputLucroError"></span></div><div class="input-group"><label for="inputPercentMoBdi">% Faturamento que é M.O. (%):</label><input type="text" id="inputPercentMoBdi" value="40.0"><span class="error-message" id="inputPercentMoBdiError"></span></div></div>
-            <div class="bdi-result"><strong>BDI Calculado: <span id="bdiCalculadoResultado">0,00%</span></strong><p>Baseado no Custo Direto Total da aba Calculadora:<br>Preço de Venda Estimado: <span id="precoVendaEstimado">R$ 0,00</span><br>Lucro Bruto Estimado: <span id="lucroBrutoEstimado">R$ 0,00</span></p><button id="btnAplicarBdiSimulado" class="btn-primary">Aplicar BDI Simulado às Configurações</button></div>
-        </div>
-
-        <!-- Aba Resumo -->
-        <div id="resumo" class="tab-content">
-            <h2>Resumo Financeiro do Orçamento</h2>
-            <div id="resumoConteudo" class="resumo-grid">
-                <div class="resumo-item"><span class="resumo-label">Custo Direto Total (CD):</span><span id="resumoCustoDireto" class="resumo-valor">R$ 0,00</span></div>
-                <div class="resumo-item"><span class="resumo-label">BDI Aplicado:</span><span id="resumoBDI" class="resumo-valor">0,00%</span></div>
-                <div class="resumo-item"><span class="resumo-label">Valor do BDI:</span><span id="resumoValorBDI" class="resumo-valor">R$ 0,00</span></div>
-                <div class="resumo-item total-geral"><span class="resumo-label">Preço de Venda Total (PV):</span><span id="resumoPrecoVenda" class="resumo-valor">R$ 0,00</span></div>
-                <div class="resumo-item"><span class="resumo-label">Custo por m² (CD / Área):</span><span id="resumoCustoPorM2" class="resumo-valor">R$ 0,00 /m²</span></div>
-                <div class="resumo-item"><span class="resumo-label">Preço de Venda por m² (PV / Área):</span><span id="resumoPrecoVendaPorM2" class="resumo-valor">R$ 0,00 /m²</span></div>
-                <div class="resumo-item"><span class="resumo-label">Custo Total de Materiais:</span><span id="resumoTotalMateriais" class="resumo-valor">R$ 0,00</span></div>
-                <div class="resumo-item"><span class="resumo-label">Custo Total de Mão de Obra:</span><span id="resumoTotalMO" class="resumo-valor">R$ 0,00</span></div>
-                <div class="resumo-item"><span class="resumo-label">Representatividade M.O. no Custo Direto:</span><span id="resumoPercentMOnoCD" class="resumo-valor">0,00%</span></div>
-                <div class="resumo-item"><span class="resumo-label">Representatividade Materiais no Custo Direto:</span><span id="resumoPercentMaterialNoCD" class="resumo-valor">0,00%</span></div>
-            </div>
-            <!-- MUDANÇA ABAIXO: Placeholder do gráfico de pizza -->
-            <div class="graficos-container">
-                <h3>Distribuição de Custos (Material vs. M.O.)</h3>
-                <div class="grafico-wrapper" style="max-width: 400px; margin: 20px auto;">
-                    <canvas id="graficoPizzaCustosCanvas"></canvas>
-                </div>
-            </div>
-            <!-- FIM DA MUDANÇA -->
-        </div>
-
-        <!-- Aba Listas (sem alteração estrutural aqui) -->
-        <div id="listas" class="tab-content">
-            <h2>Listas de Materiais e Serviços</h2>
-            <div class="listas-container"><section><h3>Lista de Serviços Quantificados</h3><div class="table-wrapper"><table id="tabelaListaServicos"><thead><tr><th>Serviço</th><th>Unidade</th><th>Quantidade</th><th>Custo Total (R$)</th></tr></thead><tbody></tbody></table></div></section><section><h3>Lista de Materiais Estimados</h3><div class="table-wrapper"><table id="tabelaListaMateriais"><thead><tr><th>Material</th><th>Unidade</th><th>Quantidade Estimada</th><th>Preço Unit. (R$)</th><th>Custo Total (R$)</th></tr></thead><tbody></tbody></table></div></section></div>
-        </div>
-
-        <!-- Aba Curva ABC -->
-        <div id="curva-abc" class="tab-content">
-            <h2>Curva ABC de Serviços</h2>
-            <p>A Curva ABC classifica os serviços pela sua representatividade no custo total direto.</p>
-            <div class="table-wrapper">
-                <table id="tabelaCurvaABC">
-                    <thead><tr><th>Serviço</th><th>Custo Total (R$)</th><th>% Individual</th><th>% Acumulada</th><th>Classe</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-            <!-- MUDANÇA ABAIXO: Placeholder do gráfico da Curva ABC -->
-            <div class="graficos-container">
-                <h3>Gráfico da Curva ABC de Serviços</h3>
-                <div class="grafico-wrapper" style="max-width: 800px; margin: 20px auto;">
-                     <canvas id="graficoCurvaABCCanvas"></canvas>
-                </div>
-            </div>
-            <!-- FIM DA MUDANÇA -->
-        </div>
-
-        <!-- Aba Cronograma -->
-        <div id="cronograma" class="tab-content">
-            <h2>Cronograma Físico-Financeiro Estimado</h2>
-            <p>Uma estimativa simplificada da distribuição dos custos ao longo do tempo.</p>
-            <div class="input-group"><label for="inputDuracaoEstimada">Duração Estimada da Obra (meses):</label><input type="number" id="inputDuracaoEstimada" value="6" min="1" step="1"></div>
-            <div class="table-wrapper"><table id="tabelaCronograma"><thead><tr><th>Mês</th><th>% Desembolso Acumulado (Estimado)</th><th>Valor Desembolsado no Mês (R$)</th><th>Valor Acumulado Desembolsado (R$)</th></tr></thead><tbody></tbody></table></div>
-            <!-- MUDANÇA ABAIXO: Placeholder do gráfico de Gantt -->
-            <div class="graficos-container">
-                <h3>Gráfico de Gantt Estimado</h3>
-                <div class="grafico-wrapper">
-                    <div id="graficoGanttContainer" style="margin: 20px 0;">
-                        <svg id="graficoGantt"></svg> <!-- Frappe Gantt usa SVG -->
+        <div id="tab-configuracoes" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-configuracoes" aria-hidden="true" tabindex="-1">
+            <div class="config-section">
+                <h2 class="text-xl font-semibold mb-4">Custos de Mão de Obra (R$/HH)</h2>
+                <div class="flex flex-wrap items-center gap-y-2 gap-x-4 mb-3">
+                    <div>
+                        <label for="cost-pedreiro">Pedreiro:</label>
+                        <input type="number" id="cost-pedreiro" value="38.00" step="0.01" min="0" aria-describedby="cost-pedreiro-desc cost-pedreiro-error-msg">
+                        <span id="cost-pedreiro-desc" class="sr-only">Custo por hora do pedreiro em Reais.</span>
+                        <span id="cost-pedreiro-error-msg" class="validation-message" aria-live="polite"></span>
+                    </div>
+                    <div>
+                        <label for="cost-servente">Servente/Ajudante:</label>
+                        <input type="number" id="cost-servente" value="20.00" step="0.01" min="0" aria-describedby="cost-servente-desc cost-servente-error-msg">
+                        <span id="cost-servente-desc" class="sr-only">Custo por hora do servente ou ajudante em Reais.</span>
+                        <span id="cost-servente-error-msg" class="validation-message" aria-live="polite"></span>
+                    </div>
+                    <div>
+                        <label for="cost-impermeabilizador">Impermeabilizador:</label>
+                        <input type="number" id="cost-impermeabilizador" value="38.00" step="0.01" min="0" aria-describedby="cost-impermeabilizador-desc cost-impermeabilizador-error-msg">
+                        <span id="cost-impermeabilizador-desc" class="sr-only">Custo por hora do impermeabilizador em Reais.</span>
+                        <span id="cost-impermeabilizador-error-msg" class="validation-message" aria-live="polite"></span>
+                    </div>
+                     <div>
+                        <label for="cost-carpinteiro">Carpinteiro:</label>
+                        <input type="number" id="cost-carpinteiro" value="38.00" step="0.01" min="0" aria-describedby="cost-carpinteiro-desc cost-carpinteiro-error-msg">
+                        <span id="cost-carpinteiro-desc" class="sr-only">Custo por hora do carpinteiro em Reais.</span>
+                        <span id="cost-carpinteiro-error-msg" class="validation-message" aria-live="polite"></span>
+                    </div>
+                    <div>
+                        <label for="cost-armador">Armador:</label>
+                        <input type="number" id="cost-armador" value="38.00" step="0.01" min="0" aria-describedby="cost-armador-desc cost-armador-error-msg">
+                        <span id="cost-armador-desc" class="sr-only">Custo por hora do armador em Reais.</span>
+                        <span id="cost-armador-error-msg" class="validation-message" aria-live="polite"></span>
                     </div>
                 </div>
+                <button type="button" id="update-labor-costs-button" class="action-button tertiary-button text-sm py-2 px-3">Atualizar Custos de M.O.</button>
             </div>
-            <!-- FIM DA MUDANÇA -->
-        </div>
-    </main>
 
-    <footer>
-        <p>&copy; <span id="currentYear"></span> Calculadora de Orçamento. Todos os direitos reservados.</p>
-    </footer>
+            <div class="config-section mt-6">
+                <h2 class="text-xl font-semibold mb-4">Preços de Materiais (R$)</h2>
+                <div id="material-prices-container" class="space-y-2">
+                </div>
+                <button type="button" id="update-material-costs-button" class="action-button tertiary-button text-sm py-2 px-3 mt-4">Atualizar Preços de Materiais</button>
+            </div>
+
+            <div class="config-section mt-6">
+                <h2 class="text-xl font-semibold mb-4">Configurações Gerais do Orçamento</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+                    <div>
+                        <label for="bdi-final-adotado-config" class="font-bold block mt-2">BDI Final Adotado (%):</label>
+                        <input type="number" id="bdi-final-adotado-config" value="105.00" step="0.01" min="0" max="1000" class="font-bold" aria-describedby="bdi-final-desc bdi-final-config-error-msg">
+                        <span id="bdi-final-desc" class="sr-only">Percentual do BDI final adotado para o orçamento. Limite 1000%.</span>
+                        <span id="bdi-final-config-error-msg" class="validation-message" aria-live="polite"></span>
+                    </div>
+                    <div>
+                        <label for="area-obra-config" class="block">Área da Obra (m²):</label>
+                        <input type="number" id="area-obra-config" value="100" step="1" min="1" aria-describedby="area-obra-desc area-obra-config-error-msg">
+                        <span id="area-obra-desc" class="sr-only">Área total da obra em metros quadrados. Mínimo 1.</span>
+                        <span id="area-obra-config-error-msg" class="validation-message" aria-live="polite"></span>
+                    </div>
+                </div>
+                <button type="button" id="update-general-configs-button" class="action-button tertiary-button text-sm py-2 px-3 mt-4">Atualizar Configurações Gerais e Tabela</button>
+            </div>
+        </div>
+
+        <div id="tab-calculadora" class="tab-content active" role="tabpanel" aria-labelledby="tab-btn-calculadora" aria-hidden="false" tabindex="0">
+            <div class="text-center mb-6 action-buttons-group">
+                <button type="button" id="save-budget-button" class="action-button secondary-button">Salvar Orçamento</button>
+                <input type="file" id="load-budget-file" accept=".json" style="display: none;" aria-label="Carregar arquivo de orçamento">
+                <button type="button" id="load-budget-button" class="action-button secondary-button">Carregar Orçamento</button>
+            </div>
+             <div class="search-filter-group">
+                <div class="search-container">
+                    <label for="search-composition-input" class="sr-only">Buscar Composição por nome ou código</label>
+                    <input type="text" id="search-composition-input" placeholder="Buscar Composição por nome ou código..." class="w-full p-2 border rounded-md">
+                    <button type="button" id="clear-search-button" class="action-button tertiary-button">Limpar</button>
+                </div>
+                <div class="filter-container mt-4">
+                    <label for="category-filter">Filtrar por Categoria:</label>
+                    <select id="category-filter">
+                        <option value="all">Todas as Categorias</option>
+                    </select>
+                     <label for="mode-cotacao-toggle" class="ml-auto flex items-center">
+                        <input type="checkbox" id="mode-cotacao-toggle" class="mr-2 h-5 w-5 text-blue-600">
+                        Modo Cotação
+                    </label>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="main-budget-table" class="min-w-full" aria-label="Tabela principal do orçamento">
+                    <thead class="header-sticky">
+                        <tr>
+                            <th class="rounded-tl-lg col-identificacao">Item da Composição (Serviço)</th><th class="col-identificacao">Ref.</th><th class="col-identificacao">U.M.</th>
+                            <th class="col-quantidade">Qtde.</th>
+                            <th class="col-custo-unit">Custo Mat. Unit. (R$)</th><th class="col-custo-unit">Custo M.O. Unit. (R$)</th><th class="col-custo-unit th-borda-custo-unit-total">Custo Unit. Total (R$)</th>
+                            <th class="col-custo-total">Custo Mat. Total (R$)</th><th class="col-custo-total">Custo M.O. Total (R$)</th><th class="col-custo-total th-borda-custo-item-total">Custo Item Total (R$)</th>
+                            <th class="col-bdi">BDI Adotado (%)</th><th class="col-bdi th-borda-preco-venda-item">Preço Venda Item (R$)</th>
+                            <th class="col-produtividade">HH Prof. Total</th><th class="col-produtividade">HH Ajud. Total</th>
+                            <th class="rounded-tr-lg col-peso">Peso Total (kg)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="budget-items"></tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td id="label-total-custo" colspan="7" class="text-right text-lg">TOTAIS CUSTO DIRETO:</td>
+                            <td id="grand-total-material" class="text-lg currency col-custo-total">R$ 0,00</td><td id="grand-total-labor" class="text-lg currency col-custo-total">R$ 0,00</td>
+                            <td id="grand-total-cost" class="text-lg currency td-borda-custo-item-total col-custo-total">R$ 0,00</td>
+                            <td class="col-bdi col-bdi-empty"></td><td id="grand-total-sell-price" class="text-lg currency td-borda-preco-venda-item col-bdi">R$ 0,00</td>
+                            <td id="grand-total-hh-prof" class="text-lg number-value col-produtividade">0.00</td>
+                            <td id="grand-total-hh-helper" class="text-lg number-value col-produtividade">0.00</td>
+                            <td id="grand-total-weight" class="text-lg number-value col-peso rounded-br-lg">0.00</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div id="calculator-actions" class="text-center mt-8 action-buttons-group">
+                <button type="button" id="process-summary-button" class="action-button">Gerar Resumo Completo</button>
+                <button type="button" id="process-abc-curve-button" class="action-button">Gerar Curva ABC</button>
+                <button type="button" id="process-schedule-button" class="action-button">Gerar Cronograma Estimado</button>
+            </div>
+        </div>
+
+        <div id="tab-simulacoes" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-simulacoes" aria-hidden="true" tabindex="-1">
+            <h2 class="text-xl mb-4">Simulações Detalhadas de BDI e Precificação</h2>
+            
+            <div id="bloco1-simulacao" class="simulacao-section">
+                <h3>BLOCO 1: SIMULAÇÃO - CUSTOS INDIRETOS E LUCRO SOBRE MÃO DE OBRA</h3>
+                <div class="grid md:grid-cols-2 gap-x-8 gap-y-4 mt-4">
+                    <div>
+                        <label for="sim-custo-mo-b1">Custo Direto Mão de Obra (R$):</label>
+                        <input type="text" id="sim-custo-mo-b1" class="simulacao-input simulacao-input-automatico" readonly aria-describedby="sim-custo-mo-b1-desc"><span id="sim-custo-mo-b1-desc" class="sr-only">Custo total da mão de obra, vindo da calculadora.</span>
+                        
+                        <div>
+                            <label for="sim-admin-mo-b1" class="mt-3">% Administração sobre M.O.:</label>
+                            <input type="number" id="sim-admin-mo-b1" value="0.00" step="0.01" min="0" max="100" class="simulacao-input simulacao-input-editavel" aria-describedby="sim-admin-mo-b1-desc sim-admin-mo-b1-error-msg"><span id="sim-admin-mo-b1-desc" class="sr-only">Percentual de administração sobre o custo da mão de obra. Máximo 100%.</span><span id="sim-admin-mo-b1-error-msg" class="validation-message" aria-live="polite"></span>
+                        </div>
+                        
+                        <div>
+                            <label for="sim-risco-mo-b1" class="mt-3">% Risco sobre M.O.:</label>
+                            <input type="number" id="sim-risco-mo-b1" value="0.00" step="0.01" min="0" max="100" class="simulacao-input simulacao-input-editavel" style="text-align: right;" aria-describedby="sim-risco-mo-b1-desc sim-risco-mo-b1-error-msg"><span id="sim-risco-mo-b1-desc" class="sr-only">Percentual de risco sobre o custo da mão de obra. Máximo 100%.</span><span id="sim-risco-mo-b1-error-msg" class="validation-message" aria-live="polite"></span>
+                        </div>
+
+                        <div>
+                            <label for="sim-custo-financeiro-mo-b1" class="mt-3">% Custo Financeiro sobre M.O.:</label>
+                            <input type="number" id="sim-custo-financeiro-mo-b1" value="0.00" step="0.01" min="0" max="100" class="simulacao-input simulacao-input-editavel" aria-describedby="sim-custo-financeiro-mo-b1-desc sim-custo-financeiro-mo-b1-error-msg"><span id="sim-custo-financeiro-mo-b1-desc" class="sr-only">Percentual de custo financeiro sobre o custo da mão de obra. Máximo 100%.</span><span id="sim-custo-financeiro-mo-b1-error-msg" class="validation-message" aria-live="polite"></span>
+                        </div>
+                    </div>
+                    <div>
+                        <div>
+                            <label for="sim-tributos-mo-b1">% Tributos sobre M.O.:</label>
+                            <input type="number" id="sim-tributos-mo-b1" value="27.00" step="0.01" min="0" max="100" class="simulacao-input simulacao-input-editavel" style="text-align: right;" aria-describedby="sim-tributos-mo-b1-desc sim-tributos-mo-b1-error-msg"><span id="sim-tributos-mo-b1-desc" class="sr-only">Percentual de tributos sobre o preço de venda da mão de obra. Máximo 100%.</span><span id="sim-tributos-mo-b1-error-msg" class="validation-message" aria-live="polite"></span>
+                        </div>
+                        
+                        <div>
+                            <label for="sim-lucro-mo-b1" class="mt-3">% Lucro Desejado:</label>
+                            <input type="number" id="sim-lucro-mo-b1" value="30.00" step="0.01" min="0" max="100" class="simulacao-input simulacao-input-editavel" aria-describedby="sim-lucro-mo-b1-desc sim-lucro-mo-b1-error-msg"><span id="sim-lucro-mo-b1-desc" class="sr-only">Percentual de lucro desejado sobre o preço de venda da mão de obra. Máximo 100%.</span><span id="sim-lucro-mo-b1-error-msg" class="validation-message" aria-live="polite"></span>
+                        </div>
+                        
+                        <p class="mt-4">
+                            <span class="block">% BDI Bloco 1 (Fator):</span>
+                            <span id="sim-bdi-bloco1-val" class="simulacao-bdi-field">0.00%</span>
+                        </p>
+                    </div>
+                </div>
+                <table id="sim-detalhe-mo-b1" class="report-table simulacao-detailed-table" aria-labelledby="bloco1-simulacao">
+                    <thead><tr><th>Resumo</th><th>Valor (R$)</th></tr></thead>
+                    <tbody>
+                        <tr><td>Custo Mão de Obra</td><td data-field="custo">R$ 0,00</td></tr>
+                        <tr><td>Valor Total (com BDI)</td><td data-field="valor_total">R$ 0,00</td></tr>
+                        <tr><td>Valor Total - Imposto</td><td data-field="valor_total_menos_imposto">R$ 0,00</td></tr>
+                        <tr><td>Lucro</td><td data-field="lucro_rs">R$ 0,00</td></tr>
+                        <tr><td>Porcentagem Lucro</td><td data-field="lucro_perc">0,00%</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="bloco2-simulacao" class="simulacao-section">
+                <h3>BLOCO 2: SIMULAÇÃO - CUSTOS INDIRETOS E LUCRO SOBRE MATERIAIS</h3>
+                <div class="grid md:grid-cols-2 gap-x-8 gap-y-4 mt-4">
+                    <div>
+                        <label for="sim-custo-mat-b2">Custo Direto Materiais (R$):</label>
+                        <input type="text" id="sim-custo-mat-b2" class="simulacao-input simulacao-input-automatico" readonly aria-describedby="sim-custo-mat-b2-desc"><span id="sim-custo-mat-b2-desc" class="sr-only">Custo total dos materiais, vindo da calculadora.</span>
+                        <div>
+                            <label for="sim-admin-mat-b2" class="mt-3">% Administração sobre Materiais:</label>
+                            <input type="number" id="sim-admin-mat-b2" value="0.00" step="0.01" min="0" max="100" class="simulacao-input simulacao-input-editavel" aria-describedby="sim-admin-mat-b2-desc sim-admin-mat-b2-error-msg"><span id="sim-admin-mat-b2-desc" class="sr-only">Percentual de administração sobre o custo dos materiais.</span><span id="sim-admin-mat-b2-error-msg" class="validation-message" aria-live="polite"></span>
+                        </div>
+                        <div>
+                            <label for="sim-risco-mat-b2" class="mt-3">% Risco sobre Materiais:</label>
+                            <input type="number" id="sim-risco-mat-b2" value="0.00" step="0.01" min="0" max="100" class="simulacao-input simulacao-input-editavel" style="text-align: right;" aria-describedby="sim-risco-mat-b2-desc sim-risco-mat-b2-error-msg"><span id="sim-risco-mat-b2-desc" class="sr-only">Percentual de risco sobre o custo dos materiais.</span><span id="sim-risco-mat-b2-error-msg" class="validation-message" aria-live="polite"></span>
+                        </div>
+                        <div>
+                            <label for="sim-custo-financeiro-mat-b2" class="mt-3">% Custo Financeiro sobre Materiais:</label>
+                            <input type="number" id="sim-custo-financeiro-mat-b2" value="0.00" step="0.01" min="0" max="100" class="simulacao-input simulacao-input-editavel" aria-describedby="sim-custo-financeiro-mat-b2-desc sim-custo-financeiro-mat-b2-error-msg"><span id="sim-custo-financeiro-mat-b2-desc" class="sr-only">Percentual de custo financeiro sobre o custo dos materiais.</span><span id="sim-custo-financeiro-mat-b2-error-msg" class="validation-message" aria-live="polite"></span>
+                        </div>
+                    </div>
+                    <div>
+                        <div>
+                            <label for="sim-tributos-mat-b2">% Tributos sobre Materiais (ICMS, IPI, etc.):</label>
+                            <input type="number" id="sim-tributos-mat-b2" value="13.00" step="0.01" min="0" max="100" class="simulacao-input simulacao-input-editavel" style="text-align: right;" aria-describedby="sim-tributos-mat-b2-desc sim-tributos-mat-b2-error-msg"><span id="sim-tributos-mat-b2-desc" class="sr-only">Percentual de tributos sobre o preço de venda dos materiais.</span><span id="sim-tributos-mat-b2-error-msg" class="validation-message" aria-live="polite"></span>
+                        </div>
+                        <div>
+                            <label for="sim-lucro-mat-b2" class="mt-3">% Lucro Desejado:</label>
+                            <input type="number" id="sim-lucro-mat-b2" value="30.00" step="0.01" min="0" max="100" class="simulacao-input simulacao-input-editavel" aria-describedby="sim-lucro-mat-b2-desc sim-lucro-mat-b2-error-msg"><span id="sim-lucro-mat-b2-desc" class="sr-only">Percentual de lucro desejado sobre o preço de venda dos materiais.</span><span id="sim-lucro-mat-b2-error-msg" class="validation-message" aria-live="polite"></span>
+                        </div>
+                        <p class="mt-4">
+                            <span class="block">% BDI Bloco 2 (Fator):</span>
+                            <span id="sim-bdi-bloco2-val" class="simulacao-bdi-field">0.00%</span>
+                        </p>
+                    </div>
+                </div>
+                <table id="sim-detalhe-mat-b2" class="report-table simulacao-detailed-table" aria-labelledby="bloco2-simulacao">
+                     <thead><tr><th>Resumo</th><th>Valor (R$)</th></tr></thead>
+                    <tbody>
+                        <tr><td>Custo Material</td><td data-field="custo">R$ 0,00</td></tr>
+                        <tr><td>Valor Total (com BDI)</td><td data-field="valor_total">R$ 0,00</td></tr>
+                        <tr><td>Valor Total - Imposto</td><td data-field="valor_total_menos_imposto">R$ 0,00</td></tr>
+                        <tr><td>Lucro</td><td data-field="lucro_rs">R$ 0,00</td></tr>
+                        <tr><td>Porcentagem Lucro</td><td data-field="lucro_perc">0,00%</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="bloco3-simulacao" class="simulacao-section">
+                <h3>BLOCO 3: RESUMO DA SIMULAÇÃO (PREÇO DE VENDA BRUTO)</h3>
+                <table id="sim-resumo-b3" class="report-table simulacao-detailed-table mt-4" aria-labelledby="bloco3-simulacao">
+                     <thead><tr><th>Descrição</th><th>Valor (R$)</th></tr></thead>
+                     <tbody>
+                        <tr><td>Valor Total</td><td data-field="valor_total_resumo">R$ 0,00</td></tr>
+                        <tr><td>Valor Total - Imposto</td><td data-field="valor_total_menos_imposto_resumo">R$ 0,00</td></tr>
+                        <tr><td>Custo Material + M.O</td><td data-field="custo_total_resumo">R$ 0,00</td></tr>
+                        <tr><td>Lucro</td><td data-field="lucro_rs_resumo">R$ 0,00</td></tr>
+                        <tr><td>Porcentagem Lucro</td><td data-field="lucro_perc_resumo">0,00%</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="bloco4-simulacao" class="simulacao-section">
+                <h3>BLOCO 4: AJUSTES DE FATURAMENTO</h3>
+                <div class="grid md:grid-cols-2 gap-x-8 gap-y-4 mt-4">
+                    <div>
+                        <label for="sim-perc-fat-mo-b4">% Faturamento como M.O.:</label> 
+                        <input type="number" id="sim-perc-fat-mo-b4" value="50.00" step="0.01" min="0" max="100" class="simulacao-input simulacao-input-editavel" aria-describedby="sim-perc-fat-mo-b4-desc sim-perc-fat-mo-b4-error-msg"><span id="sim-perc-fat-mo-b4-desc" class="sr-only">Percentual do faturamento total que será considerado como Mão de Obra. Máximo 100%.</span><span id="sim-perc-fat-mo-b4-error-msg" class="validation-message" aria-live="polite"></span>
+                    </div>
+                    <div>
+                        <label for="sim-perc-fat-material-b4">% Faturamento como Material:</label>
+                        <input type="text" id="sim-perc-fat-material-b4" class="simulacao-input simulacao-input-automatico" readonly aria-describedby="sim-perc-fat-material-b4-desc"><span id="sim-perc-fat-material-b4-desc" class="sr-only">Percentual do faturamento total que será considerado como Material (calculado automaticamente).</span>
+                    </div>
+                </div>
+                <table id="sim-detalhe-faturamento-b4" class="report-table simulacao-detailed-table mt-4" aria-labelledby="bloco4-simulacao">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th class="text-center">Mão de Obra</th>
+                            <th class="text-center">Material</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Faturamento</td>
+                            <td data-field="fat_perc_mo" class="text-center">0,00%</td>
+                            <td data-field="fat_perc_mat" class="text-center">0,00%</td>
+                        </tr>
+                        <tr>
+                            <td>Valor Total (Faturado)</td>
+                            <td data-field="fat_valor_total_mo" class="text-right">R$ 0,00</td>
+                            <td data-field="fat_valor_total_mat" class="text-right">R$ 0,00</td>
+                        </tr>
+                        <tr>
+                            <td>Imposto</td>
+                            <td data-field="fat_imposto_mo" class="text-right">R$ 0,00</td>
+                            <td data-field="fat_imposto_mat" class="text-right">R$ 0,00</td>
+                        </tr>
+                        <tr>
+                            <td>Valor - Imposto</td>
+                            <td data-field="fat_valor_menos_imposto_mo" class="text-right">R$ 0,00</td>
+                            <td data-field="fat_valor_menos_imposto_mat" class="text-right">R$ 0,00</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <table id="sim-resumo-faturamento-b4" class="report-table simulacao-detailed-table mt-4" aria-labelledby="bloco4-simulacao">
+                     <thead><tr><th>Descrição</th><th>Valor (R$)</th></tr></thead>
+                     <tbody>
+                        <tr><td>Valor Total</td><td data-field="res_fat_valor_total">R$ 0,00</td></tr>
+                        <tr><td>VALOR TOTAL - IMPOSTO</td><td data-field="res_fat_valor_total_menos_imposto">R$ 0,00</td></tr>
+                        <tr><td>Custo Material + M.O</td><td data-field="res_fat_custo_total">R$ 0,00</td></tr>
+                        <tr><td>Lucro</td><td data-field="res_fat_lucro_rs">R$ 0,00</td></tr>
+                        <tr><td>Porcentagem Lucro</td><td data-field="res_fat_lucro_perc">0,00%</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+
+             <div class="text-center mt-6">
+                <button type="button" id="sim-recalcular-bdi-tudo" class="action-button text-base py-2 px-4">Recalcular Simulação BDI</button>
+            </div>
+        </div>
+
+        <div id="tab-resumo" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-resumo" aria-hidden="true" tabindex="-1">
+            <h2 class="text-xl mb-4">Resumo do Orçamento e Listas Detalhadas</h2>
+            <div id="summary-indicators" class="report-section">
+                <h4 class="text-lg">Indicadores Chave do Orçamento</h4>
+                <p>Custo Total Direto / m²: <span id="indicator-cost-m2" class="font-bold">R$ 0,00</span></p>
+                <p>Preço de Venda Total / m²: <span id="indicator-sell-price-m2" class="font-bold">R$ 0,00</span></p>
+                <p>Custo Total Direto / HH Total (Prof. + Ajud.): <span id="indicator-cost-hh" class="font-bold">R$ 0,00</span></p>
+                <p>Preço de Venda Total / HH Total (Prof. + Ajud.): <span id="indicator-sell-price-hh" class="font-bold">R$ 0,00</span></p>
+            </div>
+            <div id="summary-content-area" class="text-sm max-h-[60vh] overflow-y-auto p-1">
+                <p class="note-text">Clique em "Gerar Resumo Completo" na aba "Calculadora" para popular esta seção.</p>
+            </div>
+            <div id="summary-export-buttons" class="text-center mt-4 space-x-1 sm:space-x-2" style="display: none;">
+                <button type="button" id="export-csv-consolidated-button" class="action-button">Exportar Consolidada (CSV)</button>
+                <button type="button" id="export-csv-detailed-button" class="action-button tertiary-button">Exportar Detalhada por Item (CSV)</button>
+                <button type="button" id="export-csv-by-service-button" class="action-button secondary-button">Exportar Materiais por Serviço (CSV)</button>
+            </div>
+        </div>
+        <div id="tab-curva-abc" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-curva-abc" aria-hidden="true" tabindex="-1">
+            <h2 class="text-xl mb-4">Análise de Curva ABC</h2>
+            <div id="abc-curve-content-area" class="text-sm p-1">
+                <p class="note-text">Clique em "Gerar Curva ABC" na aba "Calculadora" para popular esta seção.</p>
+            </div>
+        </div>
+        <div id="tab-cronograma" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-cronograma" aria-hidden="true" tabindex="-1">
+            <h2 class="text-xl mb-4">Cronograma Estimado do Projeto</h2>
+            <div id="schedule-content-area" class="text-sm p-1">
+                <p class="note-text">Clique em "Gerar Cronograma Estimado" na aba "Calculadora" para popular esta seção.</p>
+            </div>
+        </div>
+        <p class="text-xs mt-4 text-center note-text">Nota: Custos unitários baseados em composições detalhadas. HH = Horas-Homem.</p>
+    </div>
 
     <script type="module" src="js/main.js"></script>
 </body>
