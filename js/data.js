@@ -1,7 +1,6 @@
 // js/data.js
 import { parseFloatStrict } from './utils.js';
 
-// --- Estado Global da Aplicação ---
 export let laborCosts = {
     pedreiro: 38.00,
     servente: 20.00,
@@ -9,12 +8,10 @@ export let laborCosts = {
     carpinteiro: 38.00,
     armador: 38.00
 };
-
-export let materialPrices = {}; // Será populado a partir de materiaisBase
-
+export let materialPrices = {};
 export let bdiFinalAdotado = 105.00;
 export let areaObra = 100;
-export let currentAggregatedMaterials = {};
+export let currentAggregatedMaterials = {}; // Usado pelo seu relatorios.js original
 
 export const materiaisBase = {
     areiaSaco20kg: { nomeDisplay: "Areia (em sacos de 20 kg)", unidade: "saco", pesoKg: 20, precoUnitarioDefault: 5.00 },
@@ -29,7 +26,7 @@ export const materiaisBase = {
     viaplus7000_18kg: { nomeDisplay: "Viaplus 7000 (balde 18kg)", unidade: "balde", pesoKg: 18, precoUnitarioDefault: 250.00 },
     telaPoliester: { nomeDisplay: "Tela de Poliéster", unidade: "m²", pesoKg: 0.15, precoUnitarioDefault: 3.50 },
     pedra1Saco20kg: { nomeDisplay: "Pedra 1 (20 kg/saco)", unidade: "saco", pesoKg: 20, precoUnitarioDefault: 6.00 },
-    blocoCCA: { nomeDisplay: "Bloco de Concreto Celular", unidade: "unidade", pesoKg: 10.80, precoUnitarioDefault: 19.00 }, // Este é o que você tinha
+    blocoCCA: { nomeDisplay: "Bloco de Concreto Celular", unidade: "unidade", pesoKg: 10.80, precoUnitarioDefault: 19.00 },
     blocoCCA603010: { nomeDisplay: "Bloco de Concreto Celular (60x30x10cm)", unidade: "unidade", pesoKg: 10.80, precoUnitarioDefault: 13.00 },
     telaAcoPesada4_2mm10x10: { nomeDisplay: "Tela Aço Pesada 4,2mm Malha 10x10cm (Painel 2x3m)", unidade: "painel", pesoKg: (2*3) * 2.22, precoUnitarioDefault: 120.00 },
     arameRecozidoKg: { nomeDisplay: "Arame Recozido (para amarrações)", unidade: "kg", pesoKg: 1, precoUnitarioDefault: 15.00 },
@@ -79,42 +76,26 @@ export const budgetDataStructure = [
     { categoria: "Pisos / Nivelamento", description: "Contrapiso Convencional – 3cm", refComposition: "COMP-CONTRAPISO-CONV-3CM", unit: "m²", initialQuantity: 0, unitHHProfessional: 0.12, unitHHelper: 0.18, unitWeight: 61.40, professionals: { pedreiro: 0.12 }, helpers: { servente: 0.18 }, detailedMaterials: [ { idMaterial: "cimento50kg", consumptionPerUnit: 0.2520, lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: 2.2590, lossPercent: 5 }, { idMaterial: "bianco18L", consumptionPerUnit: (1/100), lossPercent: 0 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (3/100), lossPercent: 0 } ], observationsText: "Espessura 3cm. Nivelamento c/ taliscas/mestras. Traço 1:3,0. Juntas Dilatação. Cura 7 dias.", equipmentList: ["Betoneira", "Carrinho", "Pá", "Enxada", "Baldes", "Colher", "Desempenadeira", "Régua", "Nível"] }
 ];
 
-
 // --- Funções para atualizar o estado global ---
 export function updateLaborCost(type, value) {
     if (laborCosts.hasOwnProperty(type)) {
         laborCosts[type] = parseFloatStrict(value);
-    } else {
-        console.warn(`Tentativa de atualizar custo para profissional não existente: ${type}`);
-    }
+    } else { console.warn(`Profissional não existente: ${type}`); }
 }
 export function updateMaterialPrice(id, value) {
-    if (materialPrices.hasOwnProperty(id) || materiaisBase.hasOwnProperty(id)) {
+    if (materiaisBase.hasOwnProperty(id)) { // Verifica se o ID do material é válido
         materialPrices[id] = parseFloatStrict(value);
-    } else {
-         console.warn(`Tentativa de atualizar preço para material não existente ou não base: ${id}`);
-    }
+    } else { console.warn(`Material não existente: ${id}`); }
 }
-export function setBdiFinalAdotado(value) {
-    bdiFinalAdotado = parseFloatStrict(value);
-}
-export function setAreaObra(value) {
-    let val = parseFloatStrict(value);
-    areaObra = (val > 0) ? val : 1; // Garante que a área seja pelo menos 1
-}
+export function setBdiFinalAdotado(value) { bdiFinalAdotado = parseFloatStrict(value); }
+export function setAreaObra(value) { let val = parseFloatStrict(value); areaObra = (val > 0) ? val : 1; }
 export function updateBudgetItemQuantity(indexOrRef, quantity) {
     let itemIndex = -1;
-    if (typeof indexOrRef === 'number') {
-        itemIndex = indexOrRef;
-    } else if (typeof indexOrRef === 'string') {
-        itemIndex = budgetDataStructure.findIndex(item => item.refComposition === indexOrRef);
-    }
-
+    if (typeof indexOrRef === 'number') itemIndex = indexOrRef;
+    else if (typeof indexOrRef === 'string') itemIndex = budgetDataStructure.findIndex(item => item.refComposition === indexOrRef);
     if (budgetDataStructure[itemIndex]) {
         budgetDataStructure[itemIndex].initialQuantity = parseFloatStrict(quantity);
-    } else {
-        console.warn("Índice ou refComposition inválido para updateBudgetItemQuantity:", indexOrRef);
-    }
+    } else { console.warn("Índice/Ref inválido para quantidade:", indexOrRef); }
 }
 
 // --- Funções getter para o estado global ---
@@ -127,16 +108,8 @@ export function getMateriaisBase() { return { ...materiaisBase }; }
 export function getCurrentAggregatedMaterials() { return { ...currentAggregatedMaterials }; }
 export function setCurrentAggregatedMaterials(aggMaterials) { currentAggregatedMaterials = aggMaterials; }
 
-// Chamada para garantir que materialPrices seja populado na carga inicial do módulo,
-// caso não venha do localStorage ou outra fonte depois.
-// Se localStorage for usado, essa inicialização deve ocorrer apenas se não houver dados salvos.
-// A lógica em config.js (loadConfig) e persistencia.js (loadBudget) agora gerencia
-// o carregamento de materialPrices. Esta chamada aqui garante que, se nada for carregado,
-// os defaults de materiaisBase sejam usados.
-// No entanto, a initializeMaterialPrices() já chamada acima faz esse trabalho.
-// Esta função abaixo não é estritamente necessária se initializeMaterialPrices() já foi chamada.
-// export function initializeMaterialPricesFromBaseIfNeeded() {
-//     if (Object.keys(materialPrices).length === 0) { // Só inicializa se estiver vazio
-//         initializeMaterialPrices();
-//     }
-// }
+// Inicializa materialPrices com os defaults de materiaisBase se estiverem vazios.
+// Isso é importante para garantir que os preços existam antes de qualquer carregamento do localStorage.
+if (Object.keys(materialPrices).length === 0) {
+    initializeMaterialPrices();
+}

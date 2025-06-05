@@ -1,11 +1,11 @@
 // js/handlers.js
 import { ui } from './ui.js';
 import { calculadora } from './calculadora.js';
-import { configManager } from './config.js'; // Usado para resetar defaults em data.js
-import { persistencia } from './persistencia.js'; // Para save/load de orçamento global
-// Funções de exportação CSV que estavam no seu exportacao.js precisam ser chamadas/recriadas aqui ou em persistencia.js
-// Para o momento, vou focar nos handlers principais. A lógica de exportação CSV
-// precisaria ser portada do seu exportacao.js original para persistencia.js ou um novo modulo.
+import { configManager } from './config.js';
+// persistencia é importada em ui.js para os botões do header de Salvar/Carregar Orçamento
+// A lógica de exportação CSV específica precisaria ser portada do seu 'exportacao.js'
+// para 'persistencia.js' ou um novo módulo e chamada aqui.
+// Por enquanto, os botões CSV apenas alertarão.
 
 export const handlers = {
     handleAddServico() {
@@ -27,16 +27,21 @@ export const handlers = {
     handleResetApplication() {
         if (confirm("Tem certeza que deseja resetar TODA a aplicação? Isso inclui configurações e itens da calculadora. Esta ação não pode ser desfeita.")) {
             try {
-                // Não há localStorage direto aqui, pois configManager e persistencia lidam com isso
-                // A ideia é que o reset coloque os estados em data.js nos seus valores iniciais
-                // e a UI reflita isso.
+                // localStorage.removeItem('orcamentoConfig'); // persistencia.loadBudget (se chamado sem arquivo) ou configManager.resetToDefaults cuida disso.
+                configManager.resetToDefaults(); // Reseta os valores em data.js para os iniciais
+                calculadora.resetCalculadora();  // Zera quantidades em data.js e renderiza
                 
-                configManager.resetToDefaults(); // Isso deve resetar os valores em data.js para os iniciais
-                calculadora.resetCalculadora();  // Isso deve zerar as quantidades em data.js e renderizar
+                if (ui.simulacoesBDI && ui.simulacoesBDI.populateInputsFromState) { // Reseta inputs da simulação BDI
+                     // Os valores padrão de simValues já estão definidos em simulacoesBDI.js
+                     // Para um reset completo, poderíamos ter uma função resetSimValues em simulacoesBDI
+                     // ou apenas chamar populateInputsFromState que pegará os defaults se nada foi carregado.
+                     // Por agora, resetToDefaults no configManager já deve resetar os % de BDI em data.js,
+                     // e simulacoesBDI.init ou populateInputsFromState deve refletir isso.
+                     // Se persistencia.loadBudget for chamado com dados vazios (após um reset de localStorage),
+                     // ele também chamará os setters com os valores default de data.js
+                }
                 
-                // ui.resetUI() deve ser chamado para atualizar todas as UIs, incluindo
-                // a remoção de itens da tabela da calculadora e atualização dos campos de config
-                ui.resetUI(); 
+                ui.resetUI(); // Atualiza todas as UIs
                 
                 alert('Aplicação resetada para os valores padrão.');
             } catch (error) {
@@ -46,30 +51,21 @@ export const handlers = {
         }
     },
 
-    // Handlers para os botões de "Processar" das abas de relatório.
-    // Eles basicamente apenas mudam para a aba e a UI se encarrega de atualizar o conteúdo.
-    handleProcessSummary() {
-        ui.changeTab('resumo');
-    },
-    handleProcessAbcCurve() {
-        ui.changeTab('curva-abc');
-    },
-    handleProcessSchedule() {
-        ui.changeTab('cronograma');
-    },
+    // Seu main.js antigo tinha botões para processar relatórios,
+    // mas agora a ideia é que eles atualizem ao mudar de aba.
+    // Se você quiser botões explícitos, podemos adicioná-los e ligá-los aqui.
+    // Ex:
+    // handleProcessSummary() { ui.changeTab('resumo'); },
+    // handleProcessAbcCurve() { ui.changeTab('curva-abc'); },
+    // handleProcessSchedule() { ui.changeTab('cronograma'); },
 
-    // Handlers para exportação CSV - Precisam da lógica do seu exportacao.js
+    // A lógica de exportação CSV precisa ser portada do seu 'exportacao.js'
     handleExportCsvConsolidated() {
-        alert('Funcionalidade de Exportar CSV Consolidado a ser implementada/portada.');
-        // Aqui iria a chamada para uma função em persistencia.js (ou um novo modulo de exportacao)
-        // que usa getCurrentAggregatedMaterials() do seu data.js
-        // Ex: persistencia.exportMaterialsToCSV(false, getCurrentAggregatedMaterials());
+        alert('Funcionalidade de Exportar CSV Consolidado (Lista de Materiais Agregados) ainda precisa ser portada da sua versão anterior.');
+        // Exemplo: persistencia.exportarListaMateriaisAgregadosCSV();
     },
     handleExportCsvDetailedByService() {
-        alert('Funcionalidade de Exportar CSV Detalhado por Serviço a ser implementada/portada.');
-        // Ex: persistencia.exportMaterialsByServiceToCSV(getBudgetData(), getMaterialPrices(), getMateriaisBase());
+        alert('Funcionalidade de Exportar CSV Detalhado por Serviço (Lista de Materiais por Serviço) ainda precisa ser portada da sua versão anterior.');
+        // Exemplo: persistencia.exportarListaMateriaisPorServicoCSV();
     }
-
-    // Outros handlers como toggleModoCotação do seu main.js original
-    // podem ser adicionados aqui ou diretamente em ui.js se forem muito específicos da UI.
 };

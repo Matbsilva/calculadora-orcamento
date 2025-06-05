@@ -32,15 +32,16 @@
 
     <main>
         <nav class="tab-nav">
-            <button class="tab-link active" data-tab="configuracoes" id="tab-link-configuracoes">Configurações</button>
-            <button class="tab-link" data-tab="calculadora" id="tab-link-calculadora">Calculadora</button>
-            <button class="tab-link" data-tab="simulacoes-bdi" id="tab-link-simulacoes-bdi">Simulações BDI</button>
-            <button class="tab-link" data-tab="resumo" id="tab-link-resumo">Resumo</button>
-            <button class="tab-link" data-tab="listas" id="tab-link-listas">Listas</button>
-            <button class="tab-link" data-tab="curva-abc" id="tab-link-curva-abc">Curva ABC</button>
-            <button class="tab-link" data-tab="cronograma" id="tab-link-cronograma">Cronograma Estimado</button>
+            <button class="tab-link active" data-tab="configuracoes" id="tab-link-configuracoes" role="tab" aria-selected="true" tabindex="0" aria-controls="configuracoes">Configurações</button>
+            <button class="tab-link" data-tab="calculadora" id="tab-link-calculadora" role="tab" aria-selected="false" tabindex="-1" aria-controls="calculadora">Calculadora</button>
+            <button class="tab-link" data-tab="simulacoes-bdi" id="tab-link-simulacoes-bdi" role="tab" aria-selected="false" tabindex="-1" aria-controls="simulacoes-bdi">Simulações BDI</button>
+            <button class="tab-link" data-tab="resumo" id="tab-link-resumo" role="tab" aria-selected="false" tabindex="-1" aria-controls="resumo">Resumo</button>
+            <button class="tab-link" data-tab="listas" id="tab-link-listas" role="tab" aria-selected="false" tabindex="-1" aria-controls="listas">Listas</button>
+            <button class="tab-link" data-tab="curva-abc" id="tab-link-curva-abc" role="tab" aria-selected="false" tabindex="-1" aria-controls="curva-abc">Curva ABC</button>
+            <button class="tab-link" data-tab="cronograma" id="tab-link-cronograma" role="tab" aria-selected="false" tabindex="-1" aria-controls="cronograma">Cronograma Estimado</button>
         </nav>
 
+        <!-- Aba Configurações -->
         <div id="configuracoes" class="tab-content active" role="tabpanel" aria-labelledby="tab-link-configuracoes">
             <h2>Configurações Gerais e Custos</h2>
             <div class="config-grid">
@@ -68,31 +69,177 @@
             <div class="config-actions"><button id="btnSalvarConfig" class="btn-primary">Aplicar Configurações</button><button id="btnCarregarConfigPadrao" class="btn-secondary">Carregar Padrão</button></div>
         </div>
 
+        <!-- Aba Calculadora -->
         <div id="calculadora" class="tab-content" role="tabpanel" aria-labelledby="tab-link-calculadora">
             <h2>Calculadora de Custos Diretos</h2>
-            <div class="calculadora-controls"><div class="input-group"><label for="selectServico">Adicionar Serviço/Composição:</label><select id="selectServico"><option value="">Selecione um serviço...</option></select><button id="btnAdicionarServico" class="btn-primary">Adicionar</button></div><div class="input-group search-group"><label for="inputPesquisaServico">Pesquisar Serviço na Tabela:</label><input type="search" id="inputPesquisaServico" placeholder="Digite para filtrar..."></div></div>
-            <div class="table-wrapper"><table><thead><tr><th>Serviço/Composição</th><th>Unidade</th><th>Quantidade</th><th>Custo Unit. Material (R$)</th><th>Custo Unit. M.O. (R$)</th><th>Custo Total (R$)</th><th>Ações</th></tr></thead><tbody id="tabelaCalculadoraItens"></tbody><tfoot><tr><td colspan="5" style="text-align: right; font-weight: bold;">Total Custo Direto:</td><td id="totalCalculadora" style="font-weight: bold;">R$ 0,00</td><td></td></tr></tfoot></table></div>
+            <div class="calculadora-controls">
+                <div class="input-group">
+                    <label for="selectServico">Adicionar Serviço/Composição:</label>
+                    <select id="selectServico"><option value="">Selecione uma composição...</option></select>
+                    <button id="btnAdicionarServico" class="btn-primary">Adicionar</button>
+                </div>
+                <div class="input-group search-group">
+                    <label for="inputPesquisaServico">Pesquisar Serviço na Tabela:</label>
+                    <input type="search" id="inputPesquisaServico" placeholder="Digite para filtrar...">
+                </div>
+            </div>
+            <div class="bdi-display-container">
+                <span>BDI Adotado para Preço de Venda dos Itens: <strong id="bdiAdotadoDisplayCalculadora">0,00%</strong></span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item da Composição (Serviço)</th>
+                            <th>Ref.</th>
+                            <th>U.M.</th>
+                            <th>Qtde.</th>
+                            <th>Custo Mat. Unit. (R$)</th>
+                            <th>Custo M.O. Unit. (R$)</th>
+                            <th>Custo Unit. Total (R$)</th>
+                            <th>Custo Mat. Total (R$)</th>
+                            <th>Custo M.O. Total (R$)</th>
+                            <th>Custo Total (R$)</th>
+                            <th>Preço Venda Item (R$)</th>
+                            <th>HH Prof. Total</th>
+                            <th>HH Ajud. Total</th>
+                            <th>Peso Total (kg)</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaCalculadoraItens"></tbody>
+                    <tfoot id="tabelaCalculadoraRodape">
+                        <!-- Rodapé será populado por calculadora.js -->
+                    </tfoot>
+                </table>
+            </div>
         </div>
 
+        <!-- Aba Simulações BDI (Estrutura refeita para 4 blocos) -->
         <div id="simulacoes-bdi" class="tab-content" role="tabpanel" aria-labelledby="tab-link-simulacoes-bdi">
-             <h2>Simulações de BDI</h2><p>Ajuste os percentuais abaixo para simular diferentes cenários de BDI. O BDI calculado pode ser aplicado às configurações gerais.</p>
-            <div class="bdi-simulations-grid"><div class="input-group"><label for="inputAdmin">Administração Central (%):</label><input type="text" id="inputAdmin" value="10.0"><span class="error-message" id="inputAdminError"></span></div><div class="input-group"><label for="inputRisco">Risco e Imprevistos (%):</label><input type="text" id="inputRisco" value="5.0"><span class="error-message" id="inputRiscoError"></span></div><div class="input-group"><label for="inputCustoFin">Custo Financeiro (%):</label><input type="text" id="inputCustoFin" value="1.0"><span class="error-message" id="inputCustoFinError"></span></div><div class="input-group"><label for="inputTributos">Tributos (ISS, PIS, COFINS) (%):</label><input type="text" id="inputTributos" value="5.0"><span class="error-message" id="inputTributosError"></span></div><div class="input-group"><label for="inputLucro">Lucro (%):</label><input type="text" id="inputLucro" value="15.0"><span class="error-message" id="inputLucroError"></span></div><div class="input-group"><label for="inputPercentMoBdi">% Faturamento que é M.O. (%):</label><input type="text" id="inputPercentMoBdi" value="40.0"><span class="error-message" id="inputPercentMoBdiError"></span></div></div>
-            <div class="bdi-result"><strong>BDI Calculado: <span id="bdiCalculadoResultado">0,00%</span></strong><p>Baseado no Custo Direto Total da aba Calculadora:<br>Preço de Venda Estimado: <span id="precoVendaEstimado">R$ 0,00</span><br>Lucro Bruto Estimado: <span id="lucroBrutoEstimado">R$ 0,00</span></p><button id="btnAplicarBdiSimulado" class="btn-primary">Aplicar BDI Simulado às Configurações</button></div>
+            <h2>Simulações Detalhadas de BDI e Precificação</h2>
+            
+            <div class="bdi-simulation-bloco">
+                <h3>BLOCO 1: SIMULAÇÃO - CUSTOS INDIRETOS E LUCRO SOBRE MÃO DE OBRA</h3>
+                <div class="bdi-simulation-grid-container">
+                    <div class="input-group"><label for="simCustoDiretoMO">Custo Direto Mão de Obra (R$):</label><input type="text" id="simCustoDiretoMO" readonly placeholder="R$ 0,00"></div>
+                    <div class="input-group"><label for="simAdminMO">% Administração sobre M.O.:</label><input type="text" id="simAdminMO" value="10.0"><span class="error-message" id="simAdminMOError"></span></div>
+                    <div class="input-group"><label for="simRiscoMO">% Risco sobre M.O.:</label><input type="text" id="simRiscoMO" value="5.0"><span class="error-message" id="simRiscoMOError"></span></div>
+                    <div class="input-group"><label for="simCustoFinMO">% Custo Financeiro sobre M.O.:</label><input type="text" id="simCustoFinMO" value="1.0"><span class="error-message" id="simCustoFinMOError"></span></div>
+                    <div class="input-group"><label for="simTributosMO">% Tributos sobre M.O.:</label><input type="text" id="simTributosMO" value="5.0"><span class="error-message" id="simTributosMOError"></span></div>
+                    <div class="input-group"><label for="simLucroMO">% Lucro Desejado sobre M.O.:</label><input type="text" id="simLucroMO" value="15.0"><span class="error-message" id="simLucroMOError"></span></div>
+                </div>
+                <div class="bdi-simulation-summary-factor"><strong>% BDI Bloco 1 (Fator): <span id="simBdiFatorMO">0,00%</span></strong></div>
+                <div class="table-wrapper bdi-summary-table">
+                    <table>
+                        <thead><tr><th>Resumo Bloco 1 (Mão de Obra)</th><th>Valor (R$)</th></tr></thead>
+                        <tbody id="simResumoBloco1">
+                            <tr><td>Custo Mão de Obra</td><td data-value="custoMO">R$ 0,00</td></tr>
+                            <tr><td>Valor Total (com BDI)</td><td data-value="totalComBdiMO">R$ 0,00</td></tr>
+                            <tr><td>Valor Total - Imposto</td><td data-value="totalMenosImpostoMO">R$ 0,00</td></tr>
+                            <tr><td>Lucro</td><td data-value="lucroMO">R$ 0,00</td></tr>
+                            <tr><td>Porcentagem Lucro</td><td data-value="percLucroMO">0,00%</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bdi-simulation-bloco">
+                <h3>BLOCO 2: SIMULAÇÃO - CUSTOS INDIRETOS E LUCRO SOBRE MATERIAIS</h3>
+                 <div class="bdi-simulation-grid-container">
+                    <div class="input-group"><label for="simCustoDiretoMat">Custo Direto Materiais (R$):</label><input type="text" id="simCustoDiretoMat" readonly placeholder="R$ 0,00"></div>
+                    <div class="input-group"><label for="simAdminMat">% Administração sobre Materiais:</label><input type="text" id="simAdminMat" value="10.0"><span class="error-message" id="simAdminMatError"></span></div>
+                    <div class="input-group"><label for="simRiscoMat">% Risco sobre Materiais:</label><input type="text" id="simRiscoMat" value="5.0"><span class="error-message" id="simRiscoMatError"></span></div>
+                    <div class="input-group"><label for="simCustoFinMat">% Custo Financeiro sobre Materiais:</label><input type="text" id="simCustoFinMat" value="1.0"><span class="error-message" id="simCustoFinMatError"></span></div>
+                    <div class="input-group"><label for="simTributosMat">% Tributos sobre Materiais (ICMS, IPI, etc.):</label><input type="text" id="simTributosMat" value="13.0"><span class="error-message" id="simTributosMatError"></span></div>
+                    <div class="input-group"><label for="simLucroMat">% Lucro Desejado sobre Materiais:</label><input type="text" id="simLucroMat" value="15.0"><span class="error-message" id="simLucroMatError"></span></div>
+                </div>
+                <div class="bdi-simulation-summary-factor"><strong>% BDI Bloco 2 (Fator): <span id="simBdiFatorMat">0,00%</span></strong></div>
+                <div class="table-wrapper bdi-summary-table">
+                    <table>
+                        <thead><tr><th>Resumo Bloco 2 (Materiais)</th><th>Valor (R$)</th></tr></thead>
+                        <tbody id="simResumoBloco2">
+                            <tr><td>Custo Material</td><td data-value="custoMat">R$ 0,00</td></tr>
+                            <tr><td>Valor Total (com BDI)</td><td data-value="totalComBdiMat">R$ 0,00</td></tr>
+                            <tr><td>Valor Total - Imposto</td><td data-value="totalMenosImpostoMat">R$ 0,00</td></tr>
+                            <tr><td>Lucro</td><td data-value="lucroMat">R$ 0,00</td></tr>
+                            <tr><td>Porcentagem Lucro</td><td data-value="percLucroMat">0,00%</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bdi-simulation-bloco">
+                <h3>BLOCO 3: RESUMO DA SIMULAÇÃO (PREÇO DE VENDA BRUTO)</h3>
+                <div class="table-wrapper bdi-summary-table">
+                    <table id="simResumoBloco3">
+                        <thead><tr><th>Descrição</th><th>Valor (R$)</th></tr></thead>
+                        <tbody>
+                            <tr><td>Valor Total (M.O. com BDI + Material com BDI)</td><td data-value="valorTotalSimulado">R$ 0,00</td></tr>
+                            <tr><td>Valor Total - Impostos (M.O. + Material)</td><td data-value="valorTotalMenosImpostosSimulado">R$ 0,00</td></tr>
+                            <tr><td>Custo Direto Total (Material + M.O)</td><td data-value="custoDiretoTotalSimulado">R$ 0,00</td></tr>
+                            <tr><td>Lucro Total (M.O. + Material)</td><td data-value="lucroTotalSimulado">R$ 0,00</td></tr>
+                            <tr><td>Porcentagem Lucro Total sobre Custo Direto</td><td data-value="percLucroTotalSimulado">0,00%</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="bdi-simulation-bloco">
+                <h3>BLOCO 4: AJUSTES DE FATURAMENTO</h3>
+                <div class="bdi-simulation-grid-container">
+                    <div class="input-group"><label for="simPercFatMO">% Faturamento como M.O.:</label><input type="text" id="simPercFatMO" value="50.0"><span class="error-message" id="simPercFatMOError"></span></div>
+                    <div class="input-group"><label for="simPercFatMat">% Faturamento como Material:</label><input type="text" id="simPercFatMat" value="50.0" readonly><span class="error-message" id="simPercFatMatError"></span></div>
+                </div>
+                <div class="table-wrapper bdi-summary-table">
+                    <table id="simResumoBloco4_Ajuste">
+                        <thead><tr><th>Descrição</th><th>Mão de Obra</th><th>Material</th></tr></thead>
+                        <tbody>
+                            <tr><td>Faturamento (%)</td><td data-value="faturamentoPercMO">0,00%</td><td data-value="faturamentoPercMat">0,00%</td></tr>
+                            <tr><td>Valor Total (Faturado)</td><td data-value="valorTotalFaturadoMO">R$ 0,00</td><td data-value="valorTotalFaturadoMat">R$ 0,00</td></tr>
+                            <tr><td>Imposto</td><td data-value="impostoValorMO">R$ 0,00</td><td data-value="impostoValorMat">R$ 0,00</td></tr>
+                            <tr><td>Valor - Imposto</td><td data-value="valorMenosImpostoMO">R$ 0,00</td><td data-value="valorMenosImpostoMat">R$ 0,00</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                 <div class="table-wrapper bdi-summary-table" style="margin-top: 1rem;">
+                    <table id="simResumoBloco4_Final">
+                        <thead><tr><th>Descrição</th><th>Valor (R$)</th></tr></thead>
+                        <tbody>
+                            <tr><td>Valor Total (Faturado M.O. + Faturado Material)</td><td data-value="valorTotalFaturadoGeral">R$ 0,00</td></tr>
+                            <tr><td>VALOR TOTAL - IMPOSTO (Faturado M.O. + Faturado Material)</td><td data-value="valorTotalFaturadoMenosImpostoGeral">R$ 0,00</td></tr>
+                            <tr><td>Custo Direto Total (Material + M.O)</td><td data-value="custoDiretoTotalAjuste">R$ 0,00</td></tr>
+                            <tr><td>Lucro (Ajustado pelo Faturamento)</td><td data-value="lucroAjustado">R$ 0,00</td></tr>
+                            <tr><td>Porcentagem Lucro (Ajustado) sobre Custo Direto</td><td data-value="percLucroAjustado">0,00%</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
+        <!-- Aba Resumo -->
         <div id="resumo" class="tab-content" role="tabpanel" aria-labelledby="tab-link-resumo">
             <h2>Resumo Financeiro do Orçamento</h2>
-            <div id="resumoConteudo" class="resumo-grid">
-                <div class="resumo-item"><span class="resumo-label">Custo Direto Total (CD):</span><span id="resumoCustoDireto" class="resumo-valor">R$ 0,00</span></div>
-                <div class="resumo-item"><span class="resumo-label">BDI Aplicado:</span><span id="resumoBDI" class="resumo-valor">0,00%</span></div>
-                <div class="resumo-item"><span class="resumo-label">Valor do BDI:</span><span id="resumoValorBDI" class="resumo-valor">R$ 0,00</span></div>
-                <div class="resumo-item total-geral"><span class="resumo-label">Preço de Venda Total (PV):</span><span id="resumoPrecoVenda" class="resumo-valor">R$ 0,00</span></div>
-                <div class="resumo-item"><span class="resumo-label">Custo por m² (CD / Área):</span><span id="resumoCustoPorM2" class="resumo-valor">R$ 0,00 /m²</span></div>
-                <div class="resumo-item"><span class="resumo-label">Preço de Venda por m² (PV / Área):</span><span id="resumoPrecoVendaPorM2" class="resumo-valor">R$ 0,00 /m²</span></div>
-                <div class="resumo-item"><span class="resumo-label">Custo Total de Materiais:</span><span id="resumoTotalMateriais" class="resumo-valor">R$ 0,00</span></div>
-                <div class="resumo-item"><span class="resumo-label">Custo Total de Mão de Obra:</span><span id="resumoTotalMO" class="resumo-valor">R$ 0,00</span></div>
-                <div class="resumo-item"><span class="resumo-label">Representatividade M.O. no Custo Direto:</span><span id="resumoPercentMOnoCD" class="resumo-valor">0,00%</span></div>
-                <div class="resumo-item"><span class="resumo-label">Representatividade Materiais no Custo Direto:</span><span id="resumoPercentMaterialNoCD" class="resumo-valor">0,00%</span></div>
+            <!-- Layout do Resumo conforme sua imagem -->
+            <div id="resumoConteudo" class="resumo-layout-container">
+                <div class="resumo-coluna">
+                    <div class="resumo-item"><span class="resumo-label">Custo Total de Materiais:</span><span id="resumoTotalMateriais" class="resumo-valor">R$ 0,00</span></div>
+                    <div class="resumo-item"><span class="resumo-label">Custo Total de Mão de Obra:</span><span id="resumoTotalMO" class="resumo-valor">R$ 0,00</span></div>
+                    <div class="resumo-item"><span class="resumo-label">Custo Direto Total (CD):</span><span id="resumoCustoDireto" class="resumo-valor">R$ 0,00</span></div>
+                </div>
+                <div class="resumo-coluna">
+                    <div class="resumo-item"><span class="resumo-label">Representatividade Materiais no Custo Direto:</span><span id="resumoPercentMaterialNoCD" class="resumo-valor">0,00%</span></div>
+                    <div class="resumo-item"><span class="resumo-label">Representatividade M.O. no Custo Direto:</span><span id="resumoPercentMOnoCD" class="resumo-valor">0,00%</span></div>
+                    <div class="resumo-item"><span class="resumo-label">Custo por m² (CD / Área):</span><span id="resumoCustoPorM2" class="resumo-valor">R$ 0,00 /m²</span></div>
+                </div>
+                <div class="resumo-coluna">
+                    <div class="resumo-item"><span class="resumo-label">BDI Aplicado:</span><span id="resumoBDI" class="resumo-valor">0,00%</span></div>
+                    <div class="resumo-item"><span class="resumo-label">Valor do BDI:</span><span id="resumoValorBDI" class="resumo-valor">R$ 0,00</span></div>
+                </div>
+                 <div class="resumo-coluna">
+                    <div class="resumo-item total-geral"><span class="resumo-label">Preço de Venda Total (PV):</span><span id="resumoPrecoVenda" class="resumo-valor">R$ 0,00</span></div>
+                     <div class="resumo-item"><span class="resumo-label">Preço de Venda por m² (PV / Área):</span><span id="resumoPrecoVendaPorM2" class="resumo-valor">R$ 0,00 /m²</span></div>
+                </div>
             </div>
             <div class="graficos-container">
                 <h3>Distribuição de Custos (Material vs. M.O.)</h3>
@@ -102,11 +249,13 @@
             </div>
         </div>
 
+        <!-- Aba Listas -->
         <div id="listas" class="tab-content" role="tabpanel" aria-labelledby="tab-link-listas">
             <h2>Listas de Materiais e Serviços</h2>
             <div class="listas-container"><section><h3>Lista de Serviços Quantificados</h3><div class="table-wrapper"><table id="tabelaListaServicos"><thead><tr><th>Serviço/Composição</th><th>Unidade</th><th>Quantidade</th><th>Custo Total (R$)</th></tr></thead><tbody></tbody></table></div></section><section><h3>Lista de Materiais Estimados</h3><div class="table-wrapper"><table id="tabelaListaMateriais"><thead><tr><th>Material</th><th>Unidade</th><th>Quantidade Estimada</th><th>Preço Unit. (R$)</th><th>Custo Total (R$)</th></tr></thead><tbody></tbody></table></div></section></div>
         </div>
 
+        <!-- Aba Curva ABC -->
         <div id="curva-abc" class="tab-content" role="tabpanel" aria-labelledby="tab-link-curva-abc">
             <h2>Curva ABC de Serviços/Composições</h2>
             <p>A Curva ABC classifica os serviços/composições pela sua representatividade no custo total direto.</p>
@@ -118,16 +267,17 @@
             </div>
             <div class="graficos-container">
                 <h3>Gráfico da Curva ABC</h3>
-                <div class="grafico-wrapper" style="max-width: 800px; margin: 20px auto;">
+                <div class="grafico-wrapper" style="max-width: 800px; margin: 20px auto; height: 400px;"> <!-- Adicionado height -->
                      <canvas id="graficoCurvaABCCanvas"></canvas>
                 </div>
             </div>
         </div>
 
+        <!-- Aba Cronograma -->
         <div id="cronograma" class="tab-content" role="tabpanel" aria-labelledby="tab-link-cronograma">
             <h2>Cronograma Físico-Financeiro Estimado</h2>
             <p>Uma estimativa simplificada da distribuição dos custos ao longo do tempo.</p>
-            <div class="input-group"><label for="inputDuracaoEstimada">Duração Estimada da Obra (meses):</label><input type="number" id="inputDuracaoEstimada" value="6" min="1" step="1"><span class="error-message" id="inputDuracaoEstimadaError"></span></div>
+            <div class="input-group" style="max-width: 300px;"><label for="inputDuracaoEstimada">Duração Estimada da Obra (meses):</label><input type="number" id="inputDuracaoEstimada" value="6" min="1" step="1"><span class="error-message" id="inputDuracaoEstimadaError"></span></div>
             <div class="table-wrapper"><table id="tabelaCronograma"><thead><tr><th>Mês</th><th>% Desembolso Acumulado (Estimado)</th><th>Valor Desembolsado no Mês (R$)</th><th>Valor Acumulado Desembolsado (R$)</th></tr></thead><tbody></tbody></table></div>
             <div class="graficos-container">
                 <h3>Gráfico de Gantt Estimado</h3>

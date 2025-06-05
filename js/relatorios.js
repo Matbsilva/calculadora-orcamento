@@ -1,16 +1,19 @@
 // js/relatorios.js
 import { formatCurrency, formatPercentage, parseFloatStrict } from './utils.js';
-import { getMaterialPrices, getLaborCosts, getMateriaisBase, getBudgetDataStructure } from './data.js'; // Importa o necessário de data.js
+import { getMaterialPrices, getMateriaisBase, getBudgetDataStructure, getLaborCosts } from './data.js'; // Importações de data.js
 
 // --- Módulo Resumo Financeiro ---
 export const resumoFinanceiro = {
-    updateResumo(itensCalculadoraComCustos, config) {
+    updateResumo(itensCalculadoraComCustos, configApp) {
+        // itensCalculadoraComCustos é o array de calculadora.getItensComCustosCalculados()
+        // configApp é um objeto { bdiFinal, areaObra } vindo de data.js
+        
         const custoDiretoTotal = itensCalculadoraComCustos.reduce((acc, item) => acc + item.custoTotal, 0);
-        const bdiPercentual = config.bdiFinal || 0;
+        const bdiPercentual = configApp.bdiFinal || 0;
         const bdiMultiplicador = 1 + (bdiPercentual / 100);
         const valorBDI = custoDiretoTotal * (bdiPercentual / 100);
         const precoVendaTotal = custoDiretoTotal * bdiMultiplicador;
-        const areaObra = config.areaObra > 0 ? config.areaObra : 1;
+        const areaObra = configApp.areaObra > 0 ? configApp.areaObra : 1;
 
         const custoPorM2 = areaObra > 0 ? custoDiretoTotal / areaObra : 0;
         const precoVendaPorM2 = areaObra > 0 ? precoVendaTotal / areaObra : 0;
@@ -64,26 +67,23 @@ export const listas = {
             td.style.textAlign = 'center';
         }
     },
-    updateListaMateriais(itensComposicaoAtivosGlobais, configIgnored, listaServicosBaseIgnored) {
-        // itensComposicaoAtivosGlobais: são os itens da budgetDataStructure (de data.js)
-        // configIgnored e listaServicosBaseIgnored não são mais necessários como parâmetros aqui,
-        // pois podemos pegar de data.js diretamente.
+    updateListaMateriais(itensComposicaoAtivosIgnorado, configIgnorado, listaServicosBaseIgnorado) {
+        // Os parâmetros ignorados não são mais necessários aqui, pois pegaremos os dados de data.js
         const tbody = document.getElementById('tabelaListaMateriais')?.querySelector('tbody');
         if (!tbody) return;
         tbody.innerHTML = '';
 
         const aggregatedMaterials = {};
         const currentMaterialPrices = getMaterialPrices();
-        const materiaisBaseData = getMateriaisBase(); // Pega de data.js
-
-        const budgetItems = getBudgetDataStructure(); // Pega a lista completa de composições de data.js
+        const materiaisBaseData = getMateriaisBase();
+        const budgetItems = getBudgetDataStructure(); // Pega a lista completa de composições
 
         budgetItems.forEach(itemComp => {
             if (itemComp.initialQuantity > 0 && itemComp.detailedMaterials) {
                 itemComp.detailedMaterials.forEach(matDetalhe => {
                     const materialBaseInfo = materiaisBaseData[matDetalhe.idMaterial];
                     if (!materialBaseInfo) {
-                        console.warn(`Informação base não encontrada para material: ${matDetalhe.idMaterial}`);
+                        console.warn(`Informação base não encontrada para material: ${matDetalhe.idMaterial} na composição ${itemComp.description}`);
                         return;
                     }
                     const consumoComPerda = matDetalhe.consumptionPerUnit * (1 + (matDetalhe.lossPercent || 0) / 100);

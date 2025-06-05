@@ -1,32 +1,29 @@
 // js/persistencia.js
 import { ui } from './ui.js';
 import {
-    // Funções para ATUALIZAR o estado em data.js
     updateLaborCost, updateMaterialPrice, setBdiFinalAdotado, setAreaObra,
-    // Funções para OBTER o estado atual de data.js para salvar
     getLaborCosts, getMaterialPrices, getBdiFinalAdotado, getAreaObra,
-    // Para resetar para os padrões de material
-    materiaisBase,
-    // Para interagir com as quantidades das composições
-    budgetDataStructure, updateBudgetItemQuantity
+    materiaisBase, // Para resetar materialPrices para os defaults ao carregar
+    budgetDataStructure, updateBudgetItemQuantity,
+    // Adicionando os valores da simulação BDI para persistência
+    // Assumindo que simulacoesBDI.js terá getters/setters para seu estado interno 'simValues'
 } from './data.js';
-import { calculadora } from './calculadora.js'; // Para pegar itens para salvar
+import { calculadora } from './calculadora.js';
+import { simulacoesBDI } from './simulacoesBDI.js'; // Para salvar/carregar os valores da simulação
 
 export const persistencia = {
     saveBudget() {
-        // Coleta todos os dados relevantes do estado atual (via data.js e calculadora.js)
         const budgetToSave = {
-            laborCosts: getLaborCosts(),
-            materialPrices: getMaterialPrices(),
-            bdiFinalAdotado: getBdiFinalAdotado(),
-            areaObra: getAreaObra(),
-            // Salva apenas as composições que têm quantidade definida (similar ao seu main.js antigo)
-            composicoes: budgetDataStructure
-                .filter(item => item.initialQuantity > 0)
-                .map(item => ({
-                    refComposition: item.refComposition,
-                    quantity: item.initialQuantity
-                }))
+            configData: { // Agrupando os dados de config que vêm de data.js
+                laborCosts: getLaborCosts(),
+                materialPrices: getMaterialPrices(),
+                bdiFinalAdotado: getBdiFinalAdotado(),
+                areaObra: getAreaObra(),
+                // Adicionar aqui os valores dos inputs da simulação BDI
+                simulationValues: simulacoesBDI.getSimulationValues ? simulacoesBDI.getSimulationValues() : {}
+            },
+            composicoes: calculadora.getItensParaSalvar(), // Pega apenas {refComposition, quantity}
+            timestamp: new Date().toISOString()
         };
 
         try {
@@ -36,7 +33,7 @@ export const persistencia = {
             const a = document.createElement('a');
             a.href = url;
             const dataFormatada = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-            a.download = `orcamento_${dataFormatada}.json`;
+            a.download = `orcamento_calc_${dataFormatada}.json`; // Nome do arquivo um pouco mais específico
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -57,56 +54,45 @@ export const persistencia = {
             try {
                 const loadedData = JSON.parse(e.target.result);
 
-                // Validar estrutura básica do JSON carregado
-                if (!loadedData || typeof loadedData.laborCosts !== 'object' ||
-                    typeof loadedData.materialPrices !== 'object' ||
+                if (!loadedData || typeof loadedData.configData !== 'object' ||
                     !Array.isArray(loadedData.composicoes)) {
                     throw new Error("Estrutura do JSON do orçamento inválida ou dados essenciais ausentes.");
                 }
                 
-                event.target.value = null; // Limpa o input de arquivo
+                event.target.value = null; 
 
                 if (confirm("Deseja carregar este orçamento? Todas as alterações não salvas serão perdidas.")) {
-                    // Atualizar laborCosts em data.js
-                    if (loadedData.laborCosts) {
-                        for (const key in loadedData.laborCosts) {
-                            if (getLaborCosts().hasOwnProperty(key)) { // Verifica se a chave existe no estado atual
-                                updateLaborCost(key, loadedData.laborCosts[key]);
+                    const { configData, composicoes } = loadedData;
+
+                    // Restaurar dados de config em data.js
+                    if (configData.laborCosts) {
+                        for (const key in configData.laborCosts) {
+                            if (getLaborCosts().hasOwnProperty(key)) {
+                                updateLaborCost(key, configData.laborCosts[key]);
                             }
                         }
                     }
-
-                    // Atualizar materialPrices em data.js
-                    // Primeiro, reseta para os defaults para limpar valores antigos não presentes no arquivo carregado
+                    // Resetar e carregar preços de materiais
                     Object.keys(materiaisBase).forEach(idMat => updateMaterialPrice(idMat, materiaisBase[idMat].precoUnitarioDefault));
-                    // Depois, aplica os preços do arquivo carregado
-                    if (loadedData.materialPrices) {
-                        for (const key in loadedData.materialPrices) {
-                             // Apenas atualiza se o material base existir, para evitar poluir com chaves desconhecidas
+                    if (configData.materialPrices) {
+                        for (const key in configData.materialPrices) {
                             if (materiaisBase.hasOwnProperty(key)) {
-                                updateMaterialPrice(key, loadedData.materialPrices[key]);
+                                updateMaterialPrice(key, configData.materialPrices[key]);
                             }
                         }
                     }
-                    
-                    // Atualizar BDI e Área em data.js
-                    setBdiFinalAdotado(loadedData.bdiFinalAdotado !== undefined ? loadedData.bdiFinalAdotado : initialBdiFinalAdotado);
-                    setAreaObra(loadedData.areaObra !== undefined ? loadedData.areaObra : initialAreaObra);
+                    setBdiFinalAdotado(configData.bdiFinalAdotado !== undefined ? configData.bdiFinalAdotado : 105.00);
+                    setAreaObra(configData.areaObra !== undefined ? configData.areaObra : 100);
 
-                    // Atualizar quantidades na budgetDataStructure (em data.js)
-                    // Primeiro zera todas as quantidades
-                    budgetDataStructure.forEach((item, index) => updateBudgetItemQuantity(index, 0));
-                    // Depois aplica as quantidades do arquivo carregado
-                    if (loadedData.composicoes) {
-                        loadedData.composicoes.forEach(savedItem => {
-                            const itemIndex = budgetDataStructure.findIndex(bsItem => bsItem.refComposition === savedItem.refComposition);
-                            if (itemIndex !== -1) {
-                                updateBudgetItemQuantity(itemIndex, savedItem.quantity || 0);
-                            }
-                        });
+                    // Restaurar valores da simulação BDI
+                    if (configData.simulationValues && simulacoesBDI.setSimulationValues) {
+                        simulacoesBDI.setSimulationValues(configData.simulationValues);
                     }
                     
-                    ui.resetUI(); // Isso deve recarregar a UI de config, calculadora, e atualizar todas as abas
+                    // Restaurar quantidades na calculadora
+                    calculadora.setItens(composicoes); // setItens já lida com zerar e aplicar quantidades
+                    
+                    ui.resetUI(); // Isso deve recarregar todas as UIs e atualizar abas
                     alert('Orçamento carregado com sucesso!');
                 }
 

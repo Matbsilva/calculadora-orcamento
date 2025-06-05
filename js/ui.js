@@ -3,12 +3,10 @@ import { configManager } from './config.js';
 import { calculadora as calc } from './calculadora.js';
 import { simulacoesBDI as simBDI } from './simulacoesBDI.js';
 import { parseCurrency, formatCurrency, parsePercentage, formatPercentage, debounce, parseFloatStrict } from './utils.js';
-// Importando do SEU data.js
-import { budgetDataStructure as baseListaServicos, getAreaObra } from './data.js';
+import { budgetDataStructure as baseListaServicos, getAreaObra, getBdiFinalAdotado, getLaborCosts, getMaterialPrices } from './data.js'; // Importando de data.js
 import { persistencia } from './persistencia.js';
 import { handlers } from './handlers.js';
-// Importando do SEU relatorios.js
-import { resumoFinanceiro, listas as moduloListas, curvaABC, cronogramaEstimado } from './relatorios.js';
+import { resumoFinanceiro, listas as moduloListas, curvaABC, cronogramaEstimado } from './relatorios.js'; // Usando seu relatorios.js
 
 // Importando os novos módulos de gráficos
 import { initGraficoCurvaABC, renderizarGraficoCurvaABC, destroyChartCurvaABC } from './graficoCurvaABC.js';
@@ -16,158 +14,175 @@ import { initGraficoPizzaCustos, renderizarGraficoPizzaCustos, destroyChartPizza
 import { initGraficoGantt, renderizarGraficoGantt, destroyChartGantt } from './graficoGantt.js';
 
 export const ui = {
-    currentTab: 'configuracoes', // Aba inicial
-    calculadora: calc, // Expondo para simulaçõesBDI poder pegar o total
-    simulacoesBDI: simBDI, // Expondo se necessário
+    currentTab: 'configuracoes', 
+    calculadora: calc, 
+    simulacoesBDI: simBDI, 
 
     init() {
         this.setupTabNavigation();
         this.populateServicosSelect();
         this.setupEventListeners();
         
-        configManager.init(); // Isso deve carregar valores de data.js para a UI e configurar listeners da aba config
+        configManager.init(); 
         calc.init();      
-        simBDI.init();    // Isso deve carregar valores de data.js/configManager e configurar listeners da aba BDI
+        simBDI.init();    
         
         initGraficoCurvaABC();
         initGraficoPizzaCustos();
         initGraficoGantt();
 
-        this.changeTab(this.currentTab); // Força a atualização da primeira aba ativa e seus gráficos
-        // this.updateAllTabs(); // Chamado dentro de changeTab via updateCurrentTabContent
+        // Força a renderização da primeira aba ativa e todos os cálculos dependentes
+        this.changeTab(this.currentTab, true); // true para forçar updateAllTabs na primeira carga
         document.getElementById('currentYear').textContent = new Date().getFullYear();
     },
 
     setupTabNavigation() {
         const tabLinks = document.querySelectorAll('.tab-link');
         tabLinks.forEach(link => {
-            link.addEventListener('click', () => this.changeTab(link.dataset.tab));
-            // Adicionar atributos ARIA para acessibilidade
+            const tabContentId = link.dataset.tab; // dataset.tab é o valor 'configuracoes', 'calculadora', etc.
+            link.id = `tab-link-${tabContentId}`; // Garante que o link tenha um ID
+            link.addEventListener('click', () => this.changeTab(tabContentId));
             link.setAttribute('role', 'tab');
             link.setAttribute('aria-selected', 'false');
-            link.setAttribute('tabindex', '-1'); // Não focável por Tab inicialmente
-            const tabContentId = link.dataset.tab;
+            link.setAttribute('tabindex', '-1');
             link.setAttribute('aria-controls', tabContentId);
+            
             const tabContent = document.getElementById(tabContentId);
             if (tabContent) {
                 tabContent.setAttribute('role', 'tabpanel');
-                tabContent.setAttribute('aria-labelledby', link.id || `tab-${tabContentId}`);
-                if (!link.id) link.id = `tab-${tabContentId}`;
+                tabContent.setAttribute('aria-labelledby', link.id);
             }
         });
         // Ativar a primeira aba
-        const firstTabLink = document.querySelector('.tab-link[data-tab="configuracoes"]');
+        const firstTabLink = document.querySelector(`.tab-link[data-tab="${this.currentTab}"]`);
         if (firstTabLink) {
             firstTabLink.classList.add('active');
             firstTabLink.setAttribute('aria-selected', 'true');
-            firstTabLink.setAttribute('tabindex', '0'); // Focável
-            const firstTabContent = document.getElementById(firstTabLink.dataset.tab);
+            firstTabLink.setAttribute('tabindex', '0');
+            const firstTabContent = document.getElementById(this.currentTab);
             if (firstTabContent) firstTabContent.classList.add('active');
         }
     },
     
-    changeTab(tabId) {
-        // Destruir gráficos da aba anterior
-        if (this.currentTab === 'curva-abc' && typeof destroyChartCurvaABC === 'function') destroyChartCurvaABC();
-        if (this.currentTab === 'resumo' && typeof destroyChartPizzaCustos === 'function') destroyChartPizzaCustos();
-        if (this.currentTab === 'cronograma' && typeof destroyChartGantt === 'function') destroyChartGantt();
+    changeTab(tabId, isInitialLoad = false) {
+        if (this.currentTab !== tabId || isInitialLoad) { // Evita reprocessar se clicar na mesma aba, exceto na carga inicial
+            // Destruir gráficos da aba anterior
+            if (this.currentTab === 'curva-abc' && typeof destroyChartCurvaABC === 'function') destroyChartCurvaABC();
+            if (this.currentTab === 'resumo' && typeof destroyChartPizzaCustos === 'function') destroyChartPizzaCustos();
+            if (this.currentTab === 'cronograma' && typeof destroyChartGantt === 'function') destroyChartGantt();
 
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-        document.querySelectorAll('.tab-link').forEach(link => {
-            link.classList.remove('active');
-            link.setAttribute('aria-selected', 'false');
-            link.setAttribute('tabindex', '-1');
-        });
+            document.querySelectorAll('.tab-content.active').forEach(content => content.classList.remove('active'));
+            document.querySelectorAll('.tab-link.active').forEach(link => {
+                link.classList.remove('active');
+                link.setAttribute('aria-selected', 'false');
+                link.setAttribute('tabindex', '-1');
+            });
 
-        const activeTabLink = document.querySelector(`.tab-link[data-tab="${tabId}"]`);
-        const activeTabContent = document.getElementById(tabId);
+            const activeTabLink = document.getElementById(`tab-link-${tabId}`); // Usa o ID que definimos
+            const activeTabContent = document.getElementById(tabId);
 
-        if(activeTabLink) {
-            activeTabLink.classList.add('active');
-            activeTabLink.setAttribute('aria-selected', 'true');
-            activeTabLink.setAttribute('tabindex', '0'); // Torna a aba ativa focável
-            activeTabLink.focus(); // Opcional: move o foco para a aba clicada
+            if(activeTabLink) {
+                activeTabLink.classList.add('active');
+                activeTabLink.setAttribute('aria-selected', 'true');
+                activeTabLink.setAttribute('tabindex', '0');
+                if (!isInitialLoad) activeTabLink.focus(); 
+            }
+            if(activeTabContent) activeTabContent.classList.add('active');
+            
+            this.currentTab = tabId;
         }
-        if(activeTabContent) activeTabContent.classList.add('active');
-        
-        this.currentTab = tabId;
-        this.updateCurrentTabContent();
+        // Sempre atualiza o conteúdo da aba (ou todas na carga inicial)
+        if (isInitialLoad) {
+            this.updateAllTabs();
+        } else {
+            this.updateCurrentTabContent();
+        }
     },
 
     updateCurrentTabContent() {
-        // Os dados para os relatórios e gráficos são obtidos das fontes atuais (calculadora, configManager/data.js)
-        const itensParaRelatorio = calc.getItensComCustosCalculados(); // Itens ativos com custos
-        const configAtual = { // Objeto similar ao que resumoFinanceiro espera
-            bdiFinal: getBdiFinalAdotado(),
+        const itensParaRelatorio = calc.getItensComCustosCalculados();
+        const configParaResumo = { 
+            bdiFinal: getBdiFinalAdotado(), 
             areaObra: getAreaObra(),
-            // Adicionar totais de MO e Material se resumoFinanceiro precisar diretamente
-            // Normalmente resumoFinanceiro calcula isso de itensParaRelatorio
+            // Para a pizza de custos, passamos os totais de MO e Material
+            totalMO: calc.getTotalCustoMO(),
+            totalMateriais: calc.getTotalCustoMaterial()
         };
         const totalCustoDireto = calc.getTotalCustoDireto();
-        const precoVendaTotal = totalCustoDireto * (1 + configAtual.bdiFinal / 100);
+        const precoVendaTotal = totalCustoDireto * (1 + configParaResumo.bdiFinal / 100);
         const duracaoInput = document.getElementById('inputDuracaoEstimada');
         const duracao = duracaoInput ? (parseInt(duracaoInput.value, 10) || 6) : 6;
 
+        // Limpar console de erros anteriores de gráficos se houver
+        // console.clear(); 
+
         switch (this.currentTab) {
             case 'resumo':
-                resumoFinanceiro.updateResumo(itensParaRelatorio, configAtual); // Seu relatorios.js
-                renderizarGraficoPizzaCustos(); // graficoPizzaCustos.js pega os dados do DOM do resumo
+                if (resumoFinanceiro && resumoFinanceiro.updateResumo) resumoFinanceiro.updateResumo(itensParaRelatorio, configParaResumo);
+                if (typeof renderizarGraficoPizzaCustos === 'function') renderizarGraficoPizzaCustos(calc.getTotalCustoMaterial(), calc.getTotalCustoMO());
                 break;
             case 'listas':
-                moduloListas.updateListaServicos(itensParaRelatorio); // Seu relatorios.js
-                moduloListas.updateListaMateriais(baseListaServicos.filter(item => item.initialQuantity > 0), configAtual, baseListaServicos); // Seu relatorios.js
+                if (moduloListas && moduloListas.updateListaServicos) moduloListas.updateListaServicos(itensParaRelatorio);
+                if (moduloListas && moduloListas.updateListaMateriais) moduloListas.updateListaMateriais(); // Não precisa mais de params, pega de data.js
                 break;
             case 'curva-abc':
-                const dadosCurva = curvaABC.updateCurvaABC(itensParaRelatorio); // Seu relatorios.js
-                renderizarGraficoCurvaABC(dadosCurva); // graficoCurvaABC.js
+                if (curvaABC && curvaABC.updateCurvaABC) {
+                    const dadosCurva = curvaABC.updateCurvaABC(itensParaRelatorio);
+                    if (typeof renderizarGraficoCurvaABC === 'function') renderizarGraficoCurvaABC(dadosCurva);
+                }
                 break;
             case 'cronograma':
-                cronogramaEstimado.updateCronograma(precoVendaTotal, duracao); // Seu relatorios.js
-                renderizarGraficoGantt(itensParaRelatorio, duracao, new Date()); // graficoGantt.js
+                if (cronogramaEstimado && cronogramaEstimado.updateCronograma) cronogramaEstimado.updateCronograma(precoVendaTotal, duracao);
+                if (typeof renderizarGraficoGantt === 'function') renderizarGraficoGantt(itensParaRelatorio, duracao, new Date());
                 break;
             case 'simulacoes-bdi':
-                if (simBDI.calcularEExibirBDI) simBDI.calcularEExibirBDI();
+                if (simBDI && simBDI.recalculateAllBlocks) simBDI.recalculateAllBlocks();
+                break;
+             case 'configuracoes':
+                if(configManager && configManager.loadConfigValuesToUI) configManager.loadConfigValuesToUI(); // Garante que a UI de config está atual
+                break;
+            case 'calculadora':
+                if(calc && calc.recalcularTodosOsCustos) calc.recalcularTodosOsCustos(); // Garante que a tabela da calculadora e BDI display estão atualizados
                 break;
         }
     },
     
-    updateAllTabs() { // Chamado após mudanças significativas de dados
-        // Recalcula e atualiza todas as abas de relatório e gráficos
+    updateAllTabs() {
+        // Primeiro, garante que os dados base (calculadora) estejam processados
+        if(calc && calc.recalcularTodosOsCustos) calc.recalcularTodosOsCustos();
+        
         const itensParaRelatorio = calc.getItensComCustosCalculados();
-        const configAtual = { bdiFinal: getBdiFinalAdotado(), areaObra: getAreaObra() };
+        const configParaResumo = { bdiFinal: getBdiFinalAdotado(), areaObra: getAreaObra() };
         const totalCustoDireto = calc.getTotalCustoDireto();
-        const precoVendaTotal = totalCustoDireto * (1 + configAtual.bdiFinal / 100);
+        const precoVendaTotal = totalCustoDireto * (1 + configParaResumo.bdiFinal / 100);
         const duracaoInput = document.getElementById('inputDuracaoEstimada');
         const duracao = duracaoInput ? (parseInt(duracaoInput.value, 10) || 6) : 6;
 
-        if (resumoFinanceiro && resumoFinanceiro.updateResumo) resumoFinanceiro.updateResumo(itensParaRelatorio, configAtual);
+        if (resumoFinanceiro && resumoFinanceiro.updateResumo) resumoFinanceiro.updateResumo(itensParaRelatorio, configParaResumo);
         if (moduloListas && moduloListas.updateListaServicos) moduloListas.updateListaServicos(itensParaRelatorio);
-        if (moduloListas && moduloListas.updateListaMateriais) moduloListas.updateListaMateriais(baseListaServicos.filter(item => item.initialQuantity > 0), configAtual, baseListaServicos);
+        if (moduloListas && moduloListas.updateListaMateriais) moduloListas.updateListaMateriais();
         if (curvaABC && curvaABC.updateCurvaABC) {
             const dadosCurva = curvaABC.updateCurvaABC(itensParaRelatorio);
-            if (this.currentTab === 'curva-abc') renderizarGraficoCurvaABC(dadosCurva);
+            if (this.currentTab === 'curva-abc' && typeof renderizarGraficoCurvaABC === 'function') renderizarGraficoCurvaABC(dadosCurva);
         }
         if (cronogramaEstimado && cronogramaEstimado.updateCronograma) cronogramaEstimado.updateCronograma(precoVendaTotal, duracao);
-        
-        if (simBDI.calcularEExibirBDI) simBDI.calcularEExibirBDI();
+        if (simBDI && simBDI.recalculateAllBlocks) simBDI.recalculateAllBlocks();
 
-        // Atualiza gráficos que podem estar visíveis ou precisam ser atualizados em segundo plano
-        if (this.currentTab === 'resumo') renderizarGraficoPizzaCustos();
-        // A Curva ABC e Gantt são atualizados em updateCurrentTabContent quando a aba é ativada
-        // ou aqui se quisermos forçar a atualização mesmo que a aba não esteja ativa (pode ser pesado)
-        // Por ora, a atualização principal dos gráficos ocorre ao mudar para a aba.
-        if (this.currentTab === 'cronograma') renderizarGraficoGantt(itensParaRelatorio, duracao, new Date());
+        if (this.currentTab === 'resumo' && typeof renderizarGraficoPizzaCustos === 'function') renderizarGraficoPizzaCustos(calc.getTotalCustoMaterial(), calc.getTotalCustoMO());
+        if (this.currentTab === 'cronograma' && typeof renderizarGraficoGantt === 'function') renderizarGraficoGantt(itensParaRelatorio, duracao, new Date());
+        
+        // Garante que a aba de configurações também reflita quaisquer mudanças (ex: de um loadBudget)
+        if (configManager && configManager.loadConfigValuesToUI) configManager.loadConfigValuesToUI();
     },
 
     populateServicosSelect() {
         const select = document.getElementById('selectServico');
         if (!select) return;
         while (select.options.length > 1) select.remove(1);
-        // Usando baseListaServicos (que é budgetDataStructure do seu data.js)
         baseListaServicos.forEach(servico => {
             const option = document.createElement('option');
-            option.value = servico.refComposition; // Usando refComposition como ID
-            option.textContent = servico.description; // Usando description para o nome
+            option.value = servico.refComposition;
+            option.textContent = servico.description;
             select.appendChild(option);
         });
     },
@@ -177,71 +192,54 @@ export const ui = {
     formatPercentageInputOnBlur(event, min = 0, max = 100) { const input = event.target; this.clearInputError(input); let value = parsePercentage(input.value); let isValid = true; if (isNaN(value)) { this.showInputError(input, 'Valor inválido.'); value = min; isValid = false; } else if (value < min) { this.showInputError(input, `Mínimo ${min}%.`); value = min; isValid = false; } else if (value > max) { this.showInputError(input, `Máximo ${max}%.`); value = max; isValid = false; } input.value = formatPercentage(value); return { value, isValid }; },
     
     setupEventListeners() {
-        // Botões do Header
-        const btnSalvarOrc = document.getElementById('btnSalvarOrcamento');
-        if (btnSalvarOrc) btnSalvarOrc.addEventListener('click', () => persistencia.saveBudget(
-            { // Passando o estado atual de data.js para persistencia
-                laborCosts: getLaborCosts(),
-                materialPrices: getMaterialPrices(),
-                bdiFinalAdotado: getBdiFinalAdotado(),
-                areaObra: getAreaObra()
-            }, 
-            calc.getItensParaSalvar() // Passando as composições ativas com suas quantidades
-        ));
-        const inputCarregarOrc = document.getElementById('inputCarregarOrcamento');
-        if (inputCarregarOrc) inputCarregarOrc.addEventListener('change', (event) => persistencia.loadBudget(event));
-        const btnResetApp = document.getElementById('btnResetarAplicacao');
-        if (btnResetApp) btnResetApp.addEventListener('click', handlers.handleResetApplication);
+        document.getElementById('btnSalvarOrcamento').addEventListener('click', () => persistencia.saveBudget());
+        document.getElementById('inputCarregarOrcamento').addEventListener('change', (event) => persistencia.loadBudget(event));
+        document.getElementById('btnResetarAplicacao').addEventListener('click', handlers.handleResetApplication);
+        document.getElementById('btnAdicionarServico').addEventListener('click', handlers.handleAddServico);
         
-        // Aba Calculadora
-        const btnAddServ = document.getElementById('btnAdicionarServico');
-        if (btnAddServ) btnAddServ.addEventListener('click', handlers.handleAddServico);
         const inputPesqServ = document.getElementById('inputPesquisaServico');
         if (inputPesqServ) inputPesqServ.addEventListener('input', debounce(handlers.handleSearch, 300));
 
-        // Aba Cronograma
         const inputDuracaoEst = document.getElementById('inputDuracaoEstimada');
         if (inputDuracaoEst) {
-            inputDuracaoEst.addEventListener('change', () => {
+            inputDuracaoEst.addEventListener('blur', () => { // Mudado para blur para validar após sair
                 this.clearInputError(inputDuracaoEst);
                 let duracao = parseInt(inputDuracaoEst.value, 10);
                 if (isNaN(duracao) || duracao < 1) {
                     this.showInputError(inputDuracaoEst, "Duração deve ser no mínimo 1 mês.");
-                    duracao = 1;
-                    inputDuracaoEst.value = duracao;
+                    duracao = parseInt(inputDuracaoEst.min) || 1; // Usa o min do input ou 1
                 }
+                 inputDuracaoEst.value = duracao; // Atualiza o valor no input
                 if (this.currentTab === 'cronograma') this.updateCurrentTabContent(); else this.updateAllTabs();
             });
             inputDuracaoEst.addEventListener('focus', () => this.clearInputError(inputDuracaoEst));
         }
 
-        // Input Área da Obra (já que tem formatação específica com " m²" e validação)
         const inputArea = document.getElementById('inputAreaObra');
         if (inputArea) {
             inputArea.addEventListener('blur', (event) => {
                 const input = event.target;
                 this.clearInputError(input);
-                let valueStr = input.value.replace(" m²", "").replace(/[^0-9,.]/g, '').replace(',', '.');
-                let value = parseFloatStrict(valueStr); // Usar parseFloatStrict
-                if (isNaN(value) || value < 1 || !Number.isInteger(value)) {
+                let valueStr = input.value.replace(" m²", "").replace(/[^0-9]/g, ''); // Apenas dígitos
+                let value = parseInt(valueStr, 10); 
+                if (isNaN(value) || value < 1) {
                     this.showInputError(input, 'Área inválida. Mínimo 1 m² e deve ser inteiro.');
-                    value = getAreaObra(); // Reverte para o valor anterior de data.js
-                    if (value < 1 || !Number.isInteger(value)) value = 1; // Fallback
+                    value = getAreaObra(); 
+                    if (value < 1 || !Number.isInteger(value)) value = 1;
                 }
-                input.value = `${parseInt(value, 10)} m²`; // Garante inteiro na UI
-                setAreaObra(parseInt(value, 10)); // Salva como inteiro em data.js
+                const intValue = value; // Já é inteiro
+                input.value = `${intValue} m²`; 
+                setAreaObra(intValue); 
                 this.updateAllTabs(); 
             });
             inputArea.addEventListener('focus', () => this.clearInputError(inputArea));
         }
     },
-
-    resetUI() {
-        // configManager.resetToDefaults() já deve atualizar os valores em data.js e chamar seu updateUI
+    resetUI() { 
         configManager.resetToDefaults(); 
         calc.resetCalculadora(); 
-        simBDI.loadInitialValuesFromConfig(); // Para pegar os valores resetados de config/data.js
-        simBDI.updateUIFromState(); // Para refletir na UI da simulação
+        if (simBDI.populateInputsFromState) simBDI.populateInputsFromState(); // Garante que simBDI use os valores resetados de data.js
+        if (simBDI.recalculateAllBlocks) simBDI.recalculateAllBlocks();
         
         const inputPesquisa = document.getElementById('inputPesquisaServico');
         if(inputPesquisa) inputPesquisa.value = '';
@@ -249,16 +247,16 @@ export const ui = {
         if(selectServ) selectServ.value = '';
         const inputDuracao = document.getElementById('inputDuracaoEstimada');
         if(inputDuracao) {
-            inputDuracao.value = 6;
-            this.clearInputError(inputDuracao);
+            inputDuracao.value = 6; 
+            if (this.clearInputError) this.clearInputError(inputDuracao);
         }
         
         this.clearAllErrorMessages();
-        this.updateAllTabs(); // Atualiza todos os relatórios e gráficos
+        // updateAllTabs é chamado por changeTab ou explicitamente se necessário
         if (this.currentTab !== 'configuracoes') {
-            this.changeTab('configuracoes'); // Volta para a primeira aba
+            this.changeTab('configuracoes', true); // Força atualização de tudo na volta para config
         } else {
-            this.updateCurrentTabContent(); // Se já estiver na primeira, apenas atualiza
+            this.updateAllTabs(); // Se já estiver em config, apenas atualiza tudo
         }
     },
     clearAllErrorMessages() { document.querySelectorAll('.error-message').forEach(el => { el.textContent = ''; el.style.display = 'none'; }); document.querySelectorAll('.input-error').forEach(el => { el.classList.remove('input-error'); }); }
