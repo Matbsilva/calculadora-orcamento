@@ -1,7 +1,8 @@
 // js/config.js
-// ... (Conteúdo completo do config.js que forneci na mensagem onde reenviei o data.js completo)
-// Este arquivo já estava correto e adaptado para o seu data.js.
-// Repetindo para garantir que você tenha a versão certa nesta sequência final.
+// ... (Conteúdo completo do config.js que forneci na mensagem "Parte 2 de 3 (Final)" dos JS,
+//      aquela que começa com "// js/config.js" e já estava adaptada para seu data.js e
+//      incluía os inputs para todos os profissionais no HTML (que estão no index.html atualizado)).
+// Este arquivo já estava correto. Repetindo para garantir que você tenha a versão certa.
 import { formatCurrency, formatPercentage, parseFloatStrict } from './utils.js';
 import { ui } from './ui.js';
 import {
@@ -9,9 +10,8 @@ import {
     getMaterialPrices, updateMaterialPrice, getMateriaisBase,
     getBdiFinalAdotado, setBdiFinalAdotado,
     getAreaObra, setAreaObra,
-    laborCosts as initialLaborCostsState, // Renomeando para evitar conflito com a função getter
-    // materialPrices as initialMaterialPrices, // Não precisamos do estado inicial aqui, pois populamos de materiaisBase
-    materiaisBase, // Para pegar os default prices
+    laborCosts as initialLaborCostsState,
+    materiaisBase, 
     bdiFinalAdotado as initialBdiFinalAdotadoState,
     areaObra as initialAreaObraState
 } from './data.js';
@@ -24,14 +24,27 @@ export const configManager = {
     },
     loadConfigValuesToUI() {
         const currentLaborCosts = getLaborCosts();
-        for (const prof in currentLaborCosts) {
-            const inputId = `inputCusto${prof.charAt(0).toUpperCase() + prof.slice(1)}`;
+        // Mapeia as chaves de laborCosts para os IDs dos inputs
+        const laborInputMap = {
+            pedreiro: 'inputCustoPedreiro',
+            servente: 'inputCustoServente',
+            encarregado: 'inputCustoEncarregado', // Adicionado se existir no seu laborCosts
+            impermeabilizador: 'inputCustoImpermeabilizador',
+            carpinteiro: 'inputCustoCarpinteiro',
+            armador: 'inputCustoArmador'
+        };
+        for (const profKey in laborInputMap) {
+            const inputId = laborInputMap[profKey];
             const inputElement = document.getElementById(inputId);
-            if (inputElement) {
-                inputElement.value = formatCurrency(currentLaborCosts[prof]);
+            if (inputElement && currentLaborCosts.hasOwnProperty(profKey)) {
+                inputElement.value = formatCurrency(currentLaborCosts[profKey]);
                 if (ui.clearInputError) ui.clearInputError(inputElement);
+            } else if (inputElement) { // Se o input existe mas a chave não está em laborCosts (pouco provável)
+                inputElement.value = formatCurrency(0); // Define um padrão
+                 if (ui.clearInputError) ui.clearInputError(inputElement);
             }
         }
+
         const currentMaterialPrices = getMaterialPrices();
         const baseMaterials = getMateriaisBase(); 
         for (const matId in baseMaterials) { 
@@ -55,7 +68,7 @@ export const configManager = {
     },
     populateMaterialPricesUI() {
         const container = document.getElementById('materialPricesConfigContainer');
-        if (!container) return;
+        if (!container) { console.error("Container de preços de material não encontrado!"); return; }
         container.innerHTML = ''; 
         const currentMaterialPrices = getMaterialPrices(); 
         const baseMaterials = getMateriaisBase();       
@@ -84,7 +97,9 @@ export const configManager = {
     resetToDefaults() {
         const defaultLaborCosts = initialLaborCostsState;
         for (const prof in defaultLaborCosts) {
-            updateLaborCost(prof, defaultLaborCosts[prof]);
+            if (initialLaborCostsState.hasOwnProperty(prof)) { // Garante que estamos usando as chaves do estado inicial
+                updateLaborCost(prof, initialLaborCostsState[prof]);
+            }
         }
         for (const matId in materiaisBase) {
             updateMaterialPrice(matId, materiaisBase[matId].precoUnitarioDefault);
@@ -99,14 +114,18 @@ export const configManager = {
         alert('Configurações aplicadas localmente. Use "Salvar Orçamento" no topo para persistir todas as alterações em um arquivo.');
     },
     setupEventListeners() {
-        const laborCostInputs = [ 'inputCustoPedreiro', 'inputCustoServente', 'inputCustoEncarregado', 'inputCustoImpermeabilizador', 'inputCustoCarpinteiro', 'inputCustoArmador' ];
-        laborCostInputs.forEach(id => {
-            const input = document.getElementById(id);
+        const laborInputMap = {
+            pedreiro: 'inputCustoPedreiro', servente: 'inputCustoServente', 
+            encarregado: 'inputCustoEncarregado', impermeabilizador: 'inputCustoImpermeabilizador', 
+            carpinteiro: 'inputCustoCarpinteiro', armador: 'inputCustoArmador'
+        };
+        for (const professionalKey in laborInputMap) {
+            const inputId = laborInputMap[professionalKey];
+            const input = document.getElementById(inputId);
             if (input) {
                 input.addEventListener('blur', (event) => {
                     const { value, isValid } = ui.formatCurrencyInputOnBlur(event);
                     if (isValid) {
-                        const professionalKey = id.replace('inputCusto', '').toLowerCase();
                         updateLaborCost(professionalKey, value);
                         if (ui.calculadora && ui.calculadora.recalcularTodosOsCustos) ui.calculadora.recalcularTodosOsCustos();
                         if (ui.updateAllTabs) ui.updateAllTabs();
@@ -114,7 +133,7 @@ export const configManager = {
                 });
                 input.addEventListener('focus', () => { if (ui.clearInputError) ui.clearInputError(input); });
             }
-        });
+        }
         const materialPricesContainer = document.getElementById('materialPricesConfigContainer');
         if (materialPricesContainer) {
             materialPricesContainer.addEventListener('blur', (event) => {
@@ -142,12 +161,13 @@ export const configManager = {
                 const { value, isValid } = ui.formatPercentageInputOnBlur(event, 0, 1000);
                 if (isValid) {
                     setBdiFinalAdotado(value);
+                    if (ui.calculadora && ui.calculadora.recalcularTodosOsCustos) ui.calculadora.recalcularTodosOsCustos(); // Para atualizar preços de venda na calc
                     if (ui.updateAllTabs) ui.updateAllTabs();
                 }
             });
             inputBdiFinal.addEventListener('focus', () => { if (ui.clearInputError) ui.clearInputError(inputBdiFinal); });
         }
-        // O listener de inputAreaObra foi movido para ui.js por causa da formatação " m²"
+        // O listener de inputAreaObra está em ui.js
         const btnSalvar = document.getElementById('btnSalvarConfig');
         if (btnSalvar) btnSalvar.addEventListener('click', () => this.handleSaveLocalConfig()); 
         const btnCarregarPadrao = document.getElementById('btnCarregarConfigPadrao');

@@ -4,6 +4,7 @@
 import { ui } from './ui.js';
 import { calculadora } from './calculadora.js';
 import { configManager } from './config.js';
+import { persistencia } from './persistencia.js'; // Adicionado para funções de exportação se movidas para lá
 
 export const handlers = {
     handleAddServico() {
@@ -23,11 +24,10 @@ export const handlers = {
     handleResetApplication() {
         if (confirm("Tem certeza que deseja resetar TODA a aplicação? Isso inclui configurações e itens da calculadora. Esta ação não pode ser desfeita.")) {
             try {
-                configManager.resetToDefaults();
-                calculadora.resetCalculadora();
-                // Os valores da simulação BDI também devem ser resetados para os defaults em data.js
-                // O ui.resetUI() chamará o populateInputsFromState do simBDI que pegará os defaults de data.js
-                ui.resetUI();
+                configManager.resetToDefaults(); 
+                calculadora.resetCalculadora(); 
+                // Os valores da simulação BDI são resetados para os defaults em data.js via configManager ou ui.resetUI
+                if (ui.resetUI) ui.resetUI(); 
                 alert('Aplicação resetada para os valores padrão.');
             } catch (error) {
                 console.error("Erro ao resetar aplicação:", error);
@@ -38,9 +38,11 @@ export const handlers = {
     // A lógica de exportação CSV precisa ser portada do seu 'exportacao.js' original
     // e integrada aqui ou em 'persistencia.js'.
     handleExportCsvConsolidated() {
-        alert('Funcionalidade de Exportar CSV Consolidado (Lista de Materiais Agregados) precisa ser implementada/portada.');
+        alert('Funcionalidade de Exportar CSV Consolidado (Lista de Materiais Agregados) ainda precisa ser implementada/portada.');
+        // Ex: if(persistencia.exportarListaMateriaisAgregadosCSV) persistencia.exportarListaMateriaisAgregadosCSV();
     },
     handleExportCsvDetailedByService() {
-        alert('Funcionalidade de Exportar CSV Detalhado por Serviço (Lista de Materiais por Serviço) precisa ser implementada/portada.');
+        alert('Funcionalidade de Exportar CSV Detalhado por Serviço (Lista de Materiais por Serviço) ainda precisa ser implementada/portada.');
+        // Ex: if(persistencia.exportarListaMateriaisPorServicoCSV) persistencia.exportarListaMateriaisPorServicoCSV();
     }
 };

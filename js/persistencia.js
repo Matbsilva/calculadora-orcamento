@@ -1,27 +1,27 @@
 // js/persistencia.js
-// ... (Conteúdo completo do persistencia.js que forneci na penúltima mensagem, Parte 1 de 3 dos JS)
-// Este arquivo já deve estar correto.
+// ... (Conteúdo completo do persistencia.js que forneci na Parte 1 de 3 (Final) dos JS,
+//      que começa com "// js/persistencia.js")
+// Este arquivo já estava correto.
 import { ui } from './ui.js';
 import {
     updateLaborCost, updateMaterialPrice, setBdiFinalAdotado, setAreaObra,
     getLaborCosts, getMaterialPrices, getBdiFinalAdotado, getAreaObra,
     materiaisBase, 
     budgetDataStructure, updateBudgetItemQuantity,
-    setSimulationBdiValues, getSimulationBdiValues // Para persistir os valores da simulação BDI
+    setSimulationBdiValues, getSimulationBdiValues, simDefaultValues // Adicionado para simBDI
 } from './data.js';
 import { calculadora } from './calculadora.js';
-// simulacoesBDI é importado em ui.js, e ui.js chama os métodos de simBDI.
-// Aqui, precisamos apenas dos getters/setters de data.js para os valores da simulação.
+// simulacoesBDI é importado em ui.js e persistencia interage com data.js para os valores da simulação
 
 export const persistencia = {
     saveBudget() {
         const budgetToSave = {
-            configData: {
+            configData: { 
                 laborCosts: getLaborCosts(),
                 materialPrices: getMaterialPrices(),
                 bdiFinalAdotado: getBdiFinalAdotado(),
                 areaObra: getAreaObra(),
-                simulationBdiValues: getSimulationBdiValues() // Salva os valores da simulação
+                simulationBdiValues: getSimulationBdiValues() 
             },
             composicoes: calculadora.getItensParaSalvar(),
             timestamp: new Date().toISOString()
@@ -58,14 +58,15 @@ export const persistencia = {
                 if (confirm("Deseja carregar este orçamento? Alterações não salvas serão perdidas.")) {
                     const { configData, composicoes } = loadedData;
                     if (configData.laborCosts) { Object.keys(configData.laborCosts).forEach(k => { if (getLaborCosts().hasOwnProperty(k)) updateLaborCost(k, configData.laborCosts[k]); }); }
-                    Object.keys(materiaisBase).forEach(idMat => updateMaterialPrice(idMat, materiaisBase[idMat].precoUnitarioDefault));
+                    Object.keys(materiaisBase).forEach(idMat => updateMaterialPrice(idMat, materiaisBase[idMat].precoUnitarioDefault)); // Reseta primeiro
                     if (configData.materialPrices) { Object.keys(configData.materialPrices).forEach(k => { if (materiaisBase.hasOwnProperty(k)) updateMaterialPrice(k, configData.materialPrices[k]); }); }
-                    setBdiFinalAdotado(configData.bdiFinalAdotado !== undefined ? configData.bdiFinalAdotado : 105.00);
-                    setAreaObra(configData.areaObra !== undefined ? configData.areaObra : 100);
+                    setBdiFinalAdotado(configData.bdiFinalAdotado !== undefined ? configData.bdiFinalAdotado : simDefaultValues.bdiFinalAdotado); // Usar o default de data.js se não vier
+                    setAreaObra(configData.areaObra !== undefined ? configData.areaObra : simDefaultValues.areaObra); // Usar o default de data.js
                     if (configData.simulationBdiValues) { setSimulationBdiValues(configData.simulationBdiValues); }
+                    else { setSimulationBdiValues(simDefaultValues); } // Se não houver no arquivo, usa os defaults
                     
                     calculadora.setItens(composicoes);
-                    ui.resetUI(); // Chama para atualizar todas as UIs com os novos dados carregados
+                    if (ui.resetUI) ui.resetUI(); // resetUI deve atualizar todas as UIs com os novos dados
                     alert('Orçamento carregado com sucesso!');
                 }
             } catch (error) {
