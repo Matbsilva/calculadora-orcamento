@@ -1,30 +1,23 @@
 // js/relatorios.js
 import { formatCurrency, formatPercentage, parseFloatStrict } from './utils.js';
-import { getMaterialPrices, getMateriaisBase, getBudgetDataStructure, getLaborCosts } from './data.js'; // Importações de data.js
+import { getMaterialPrices, getMateriaisBase, getBudgetDataStructure } from './data.js';
 
-// --- Módulo Resumo Financeiro ---
 export const resumoFinanceiro = {
     updateResumo(itensCalculadoraComCustos, configApp) {
-        // itensCalculadoraComCustos é o array de calculadora.getItensComCustosCalculados()
-        // configApp é um objeto { bdiFinal, areaObra } vindo de data.js
-        
         const custoDiretoTotal = itensCalculadoraComCustos.reduce((acc, item) => acc + item.custoTotal, 0);
         const bdiPercentual = configApp.bdiFinal || 0;
         const bdiMultiplicador = 1 + (bdiPercentual / 100);
         const valorBDI = custoDiretoTotal * (bdiPercentual / 100);
         const precoVendaTotal = custoDiretoTotal * bdiMultiplicador;
         const areaObra = configApp.areaObra > 0 ? configApp.areaObra : 1;
-
         const custoPorM2 = areaObra > 0 ? custoDiretoTotal / areaObra : 0;
         const precoVendaPorM2 = areaObra > 0 ? precoVendaTotal / areaObra : 0;
-
         let totalMateriaisCusto = 0;
         let totalMOCusto = 0;
         itensCalculadoraComCustos.forEach(item => {
             totalMateriaisCusto += item.custoUnitarioMaterial * item.quantidade;
             totalMOCusto += item.custoUnitarioMO * item.quantidade;
         });
-
         const percentMOnoCD = custoDiretoTotal > 0 ? (totalMOCusto / custoDiretoTotal) * 100 : 0;
         const percentMaterialNoCD = custoDiretoTotal > 0 ? (totalMateriaisCusto / custoDiretoTotal) * 100 : 0;
 
@@ -45,7 +38,6 @@ export const resumoFinanceiro = {
     }
 };
 
-// --- Módulo Listas ---
 export const listas = {
     updateListaServicos(itensCalculadoraComCustos) {
         const tbody = document.getElementById('tabelaListaServicos')?.querySelector('tbody');
@@ -67,23 +59,21 @@ export const listas = {
             td.style.textAlign = 'center';
         }
     },
-    updateListaMateriais(itensComposicaoAtivosIgnorado, configIgnorado, listaServicosBaseIgnorado) {
-        // Os parâmetros ignorados não são mais necessários aqui, pois pegaremos os dados de data.js
+    updateListaMateriais() { // Não precisa mais de params, pega de data.js
         const tbody = document.getElementById('tabelaListaMateriais')?.querySelector('tbody');
         if (!tbody) return;
         tbody.innerHTML = '';
-
         const aggregatedMaterials = {};
         const currentMaterialPrices = getMaterialPrices();
         const materiaisBaseData = getMateriaisBase();
-        const budgetItems = getBudgetDataStructure(); // Pega a lista completa de composições
+        const budgetItems = getBudgetDataStructure();
 
         budgetItems.forEach(itemComp => {
             if (itemComp.initialQuantity > 0 && itemComp.detailedMaterials) {
                 itemComp.detailedMaterials.forEach(matDetalhe => {
                     const materialBaseInfo = materiaisBaseData[matDetalhe.idMaterial];
                     if (!materialBaseInfo) {
-                        console.warn(`Informação base não encontrada para material: ${matDetalhe.idMaterial} na composição ${itemComp.description}`);
+                        console.warn(`Info base não encontrada para mat: ${matDetalhe.idMaterial} em ${itemComp.description}`);
                         return;
                     }
                     const consumoComPerda = matDetalhe.consumptionPerUnit * (1 + (matDetalhe.lossPercent || 0) / 100);
@@ -91,7 +81,6 @@ export const listas = {
                     const precoUnitario = currentMaterialPrices[matDetalhe.idMaterial] !== undefined 
                                         ? currentMaterialPrices[matDetalhe.idMaterial] 
                                         : materialBaseInfo.precoUnitarioDefault;
-
                     if (aggregatedMaterials[matDetalhe.idMaterial]) {
                         aggregatedMaterials[matDetalhe.idMaterial].quantidade += quantidadeTotalMaterial;
                     } else {
@@ -105,7 +94,6 @@ export const listas = {
                 });
             }
         });
-
         if (Object.keys(aggregatedMaterials).length > 0) {
             for (const matId in aggregatedMaterials) {
                 const mat = aggregatedMaterials[matId];
@@ -127,7 +115,6 @@ export const listas = {
     }
 };
 
-// --- Módulo Curva ABC ---
 export const curvaABC = {
     updateCurvaABC(itensCalculadoraComCustos) {
         const tbody = document.getElementById('tabelaCurvaABC')?.querySelector('tbody');
@@ -158,13 +145,12 @@ export const curvaABC = {
             tr.insertCell().textContent = formatPercentage(percentualIndividual, 2);
             tr.insertCell().textContent = formatPercentage(percentualAcumulado, 2);
             tr.insertCell().textContent = classeABC;
-            dadosParaGrafico.push({ nome: item.nome, custo: item.custoTotal, percentualAcumulado: percentualAcumulado });
+            dadosParaGrafico.push({ nome: item.nome, custo: item.custoTotal, percentualAcumulado: Math.min(percentualAcumulado,100) }); // Garante que não passe de 100 para o gráfico
         });
         return dadosParaGrafico;
     }
 };
 
-// --- Módulo Cronograma Estimado ---
 export const cronogramaEstimado = {
     curvaS_tipica: { 1:0.02, 2:0.08, 3:0.18, 4:0.35, 5:0.55, 6:0.75, 7:0.88, 8:0.95, 9:0.98, 10:1.0, 11:1.0, 12:1.0 },
     updateCronograma(precoVendaTotal, duracaoMeses) {

@@ -11,7 +11,15 @@ export let laborCosts = {
 export let materialPrices = {};
 export let bdiFinalAdotado = 105.00;
 export let areaObra = 100;
-export let currentAggregatedMaterials = {}; // Usado pelo seu relatorios.js original
+export let currentAggregatedMaterials = {};
+
+// Seus valores padrão para a simulação BDI
+export let simDefaultValues = {
+    simAdminMO: 0.0, simRiscoMO: 0.0, simCustoFinMO: 0.0, simTributosMO: 27.0, simLucroMO: 30.0,
+    simAdminMat: 0.0, simRiscoMat: 0.0, simCustoFinMat: 0.0, simTributosMat: 13.0, simLucroMat: 30.0,
+    simPercFatMO: 50.0
+};
+
 
 export const materiaisBase = {
     areiaSaco20kg: { nomeDisplay: "Areia (em sacos de 20 kg)", unidade: "saco", pesoKg: 20, precoUnitarioDefault: 5.00 },
@@ -66,7 +74,7 @@ export const budgetDataStructure = [
     { categoria: "Alvenarias / Vedações Verticais", description: "Mureta Bl. Concreto - 1 Fiada (10/20cm) - Assent. s/ CAL", refComposition: "COMP-MUR_BLC001", unit: "ml", initialQuantity: 0, unitHHProfessional: 0.12, unitHHelper: 0.08, unitWeight: 47.24, professionals: { pedreiro: 0.12 }, helpers: { servente: 0.08 }, detailedMaterials: [ { idMaterial: "blocoConcreto39x19x19", consumptionPerUnit: (256/100), lossPercent: 3 }, { idMaterial: "cimento50kg", consumptionPerUnit: (2.94/100), lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: (26.36/100), lossPercent: 5 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (1/100), lossPercent: 0 } ], observationsText: "Altura 10/20cm (1 fiada). Argamassa s/ cal, c/ Bianco. Nivelamento e prumo. S/ regularização.", equipmentList: ["Colher", "Nível", "Prumo", "Linha", "Baldes", "Masseira"] },
     { categoria: "Alvenarias / Vedações Verticais", description: "Mureta Bl. CCA (60x30x10cm) - 30cm alt (1 Fiada deitado)", refComposition: "COMP-MUR_CCA002", unit: "ml", initialQuantity: 0, unitHHProfessional: 0.18, unitHHelper: 0.12, unitWeight: 19.51, professionals: { pedreiro: 0.18 }, helpers: { servente: 0.12 }, detailedMaterials: [ { idMaterial: "blocoCCA603010", consumptionPerUnit: (166.67/100), lossPercent: 3 }, { idMaterial: "cimento50kg", consumptionPerUnit: (0.36/100), lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: (1.80/100), lossPercent: 5 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (1/100), lossPercent: 0 } ], observationsText: "Altura 30cm (1 fiada CCA deitado). Argamassa fina c/ Bianco. Nivelamento e prumo. S/ regularização.", equipmentList: ["Serra bloco", "Colher", "Nível", "Prumo", "Linha", "Baldes", "Masseira"] },
     { categoria: "Estruturas / Lajes", description: "Base Concreto Estrut. Laje - 4,5x4,5x0,20m (40T)", refComposition: "COMP-BASE-CONC-001", unit: "un", initialQuantity: 0, unitHHProfessional: 103.68, unitHHelper: 97.20, unitWeight: 9384.72, professionals: { pedreiro: 48.60, carpinteiro: 6.48, armador: 48.60 }, helpers: { servente: 97.20 }, detailedMaterials: [ { idMaterial: "cimento50kg", consumptionPerUnit: 28.35, lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: 182.25, lossPercent: 5 }, { idMaterial: "pedra1Saco20kg", consumptionPerUnit: 186.30, lossPercent: 5 }, { idMaterial: "telaAcoPesada4_2mm10x10", consumptionPerUnit: 12.00, lossPercent: 0 }, { idMaterial: "arameRecozidoKg", consumptionPerUnit: 0.25, lossPercent: 5 }, { idMaterial: "tabuasMadeiraM2", consumptionPerUnit: 3.60, lossPercent: 5 }, { idMaterial: "pregoKg", consumptionPerUnit: 0.10, lossPercent: 5 } ], observationsText: "Armadura Dupla Tela. Espaçadores. Sobreposição. Concretagem Contínua. Cura 7 dias.", equipmentList: ["Betoneira", "Carrinho", "Vibrador", "Formas", "Serra", "Martelo", "Trena", "Nível", "Içamento (se nec.)"] },
-    { categoria: "Estruturas / Lajes", description: "Base Concreto Estrut. Laje - 4,5x4,5x0,10m (10T)", refComposition: "COMP-BASE-CONC-002", unit: "un", initialQuantity: 0, unitHHProfessional: 38.04, unitHHelper: 46.58, unitWeight: 4693.36, professionals: { pedreiro: 23.29, carpinteiro: 3.11, armador: 11.64 }, helpers: { servente: 46.58 }, detailedMaterials: [ { idMaterial: "cimento50kg", consumptionPerUnit: 14.18, lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: 91.13, lossPercent: 5 }, { idMaterial: "pedra1Saco20kg", consumptionPerUnit: 93.15, lossPercent: 5 }, { idMaterial: "telaAcoLeve4_2mm15x15", consumptionPerUnit: 6.00, lossPercent: 0 }, { idMaterial: "arameRecozidoKg", consumptionPerUnit: 0.15, lossPercent: 5 }, { idMaterial: "tabuasMadeiraM2", consumptionPerUnit: 1.80, lossPercent: 5 }, { idMaterial: "pregoKg", consumptionPerUnit: 0.05, lossPercent: 5 } ], observationsText: "Armadura Simples. Espaçadores. Sobreposição. Concretagem Contínua. Cura 7 dias.", equipmentList: ["Betoneira", "Carrinho", "Vibrador", "Formas", "Serra", "Martelo", "Trena", "Nível", "Içamento (se nec.)"] },
+    { categoria: "Estruturas / Lajes", description: "Base Concreto Estrut. Laje - 4,5x4_5x0,10m (10T)", refComposition: "COMP-BASE-CONC-002", unit: "un", initialQuantity: 0, unitHHProfessional: 38.04, unitHHelper: 46.58, unitWeight: 4693.36, professionals: { pedreiro: 23.29, carpinteiro: 3.11, armador: 11.64 }, helpers: { servente: 46.58 }, detailedMaterials: [ { idMaterial: "cimento50kg", consumptionPerUnit: 14.18, lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: 91.13, lossPercent: 5 }, { idMaterial: "pedra1Saco20kg", consumptionPerUnit: 93.15, lossPercent: 5 }, { idMaterial: "telaAcoLeve4_2mm15x15", consumptionPerUnit: 6.00, lossPercent: 0 }, { idMaterial: "arameRecozidoKg", consumptionPerUnit: 0.15, lossPercent: 5 }, { idMaterial: "tabuasMadeiraM2", consumptionPerUnit: 1.80, lossPercent: 5 }, { idMaterial: "pregoKg", consumptionPerUnit: 0.05, lossPercent: 5 } ], observationsText: "Armadura Simples. Espaçadores. Sobreposição. Concretagem Contínua. Cura 7 dias.", equipmentList: ["Betoneira", "Carrinho", "Vibrador", "Formas", "Serra", "Martelo", "Trena", "Nível", "Içamento (se nec.)"] },
     { categoria: "Impermeabilização / Acabamentos de Base", description: "Meia Cana de Argamassa (Cimento e Areia)", refComposition: "COMP-MEIA-CANA-001", unit: "ml", initialQuantity: 0, unitHHProfessional: 0.08, unitHHelper: 0.08, unitWeight: 3.04, professionals: { pedreiro: 0.08 }, helpers: { servente: 0.08 }, detailedMaterials: [ { idMaterial: "cimento50kg", consumptionPerUnit: (1.06/100), lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: (9.46/100), lossPercent: 5 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (1/100), lossPercent: 0 } ], observationsText: "Preparo Argamassa. Aplicação e moldagem raio ~4cm. Acabamento liso. Cura 72h.", equipmentList: ["Colher", "Desempenadeira de canto", "Baldes", "Masseira"] },
     { categoria: "Pisos / Nivelamento", description: "Enchimento Piso EPS (15cm), Base (1cm), Contrap. (5cm)", refComposition: "COMP-ENCH-EPS-TESTE", unit: "m²", initialQuantity: 0, unitHHProfessional: 0.30, unitHHelper: 0.45, unitWeight: 124.35, professionals: { pedreiro: 0.30 }, helpers: { servente: 0.45 }, detailedMaterials: [ { idMaterial: "eps15cm", consumptionPerUnit: 1.00, lossPercent: 3 }, { idMaterial: "cimento50kg", consumptionPerUnit: 0.504, lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: 4.518, lossPercent: 5 }, { idMaterial: "bianco18L", consumptionPerUnit: (2/100), lossPercent: 0 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (4/100), lossPercent: 0 } ], observationsText: "Preparo Base. EPS sobre base fresca. Contrapiso sobre EPS curado. Cura. Nivelamento.", equipmentList: ["Betoneira", "Carrinho", "Serra EPS", "Régua", "Nível", "Desempenadeira"] },
     { categoria: "Alvenarias / Vedações Verticais", description: "Mureta Bl. CCA (60x30x10cm) - 10cm alt COM Regularização", refComposition: "COMP-MUR_CCA003-REG", unit: "ml", initialQuantity: 0, unitHHProfessional: 0.19, unitHHelper: 0.14, unitWeight: 25.60, professionals: { pedreiro: 0.19 }, helpers: { servente: 0.14 }, detailedMaterials: [ { idMaterial: "blocoCCA603010", consumptionPerUnit: (83.30/100), lossPercent: 3 }, { idMaterial: "cimento50kg", consumptionPerUnit: (0.18/100), lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: (0.90/100), lossPercent: 5 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (1/100), lossPercent: 0 }, { idMaterial: "cimento50kg", consumptionPerUnit: (6.30/100), lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: (56.48/100), lossPercent: 5 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (2/100), lossPercent: 0 } ], observationsText: "Mureta 10cm CCA, c/ chapisco e reboco. Nivelamento e prumo.", equipmentList: ["Serra bloco", "Colher", "Desempenadeira", "Nível", "Prumo", "Linha", "Baldes", "Masseira", "Betoneira"] },
@@ -76,19 +84,18 @@ export const budgetDataStructure = [
     { categoria: "Pisos / Nivelamento", description: "Contrapiso Convencional – 3cm", refComposition: "COMP-CONTRAPISO-CONV-3CM", unit: "m²", initialQuantity: 0, unitHHProfessional: 0.12, unitHHelper: 0.18, unitWeight: 61.40, professionals: { pedreiro: 0.12 }, helpers: { servente: 0.18 }, detailedMaterials: [ { idMaterial: "cimento50kg", consumptionPerUnit: 0.2520, lossPercent: 5 }, { idMaterial: "areiaSaco20kg", consumptionPerUnit: 2.2590, lossPercent: 5 }, { idMaterial: "bianco18L", consumptionPerUnit: (1/100), lossPercent: 0 }, { idMaterial: "bianco3_6L", consumptionPerUnit: (3/100), lossPercent: 0 } ], observationsText: "Espessura 3cm. Nivelamento c/ taliscas/mestras. Traço 1:3,0. Juntas Dilatação. Cura 7 dias.", equipmentList: ["Betoneira", "Carrinho", "Pá", "Enxada", "Baldes", "Colher", "Desempenadeira", "Régua", "Nível"] }
 ];
 
-// --- Funções para atualizar o estado global ---
 export function updateLaborCost(type, value) {
     if (laborCosts.hasOwnProperty(type)) {
         laborCosts[type] = parseFloatStrict(value);
     } else { console.warn(`Profissional não existente: ${type}`); }
 }
 export function updateMaterialPrice(id, value) {
-    if (materiaisBase.hasOwnProperty(id)) { // Verifica se o ID do material é válido
+    if (materiaisBase.hasOwnProperty(id)) {
         materialPrices[id] = parseFloatStrict(value);
-    } else { console.warn(`Material não existente: ${id}`); }
+    } else { console.warn(`Material não existente na base: ${id}`); }
 }
 export function setBdiFinalAdotado(value) { bdiFinalAdotado = parseFloatStrict(value); }
-export function setAreaObra(value) { let val = parseFloatStrict(value); areaObra = (val > 0) ? val : 1; }
+export function setAreaObra(value) { let val = parseInt(value, 10); areaObra = (val > 0) ? val : 1; } // Garantir inteiro
 export function updateBudgetItemQuantity(indexOrRef, quantity) {
     let itemIndex = -1;
     if (typeof indexOrRef === 'number') itemIndex = indexOrRef;
@@ -97,8 +104,6 @@ export function updateBudgetItemQuantity(indexOrRef, quantity) {
         budgetDataStructure[itemIndex].initialQuantity = parseFloatStrict(quantity);
     } else { console.warn("Índice/Ref inválido para quantidade:", indexOrRef); }
 }
-
-// --- Funções getter para o estado global ---
 export function getLaborCosts() { return { ...laborCosts }; }
 export function getMaterialPrices() { return { ...materialPrices }; }
 export function getBdiFinalAdotado() { return bdiFinalAdotado; }
@@ -108,8 +113,16 @@ export function getMateriaisBase() { return { ...materiaisBase }; }
 export function getCurrentAggregatedMaterials() { return { ...currentAggregatedMaterials }; }
 export function setCurrentAggregatedMaterials(aggMaterials) { currentAggregatedMaterials = aggMaterials; }
 
-// Inicializa materialPrices com os defaults de materiaisBase se estiverem vazios.
-// Isso é importante para garantir que os preços existam antes de qualquer carregamento do localStorage.
-if (Object.keys(materialPrices).length === 0) {
+// Valores da simulação BDI (para persistência)
+// Estes serão atualizados pelo módulo simulacoesBDI.js
+export let simulationBdiValues = { ...simDefaultValues }; // Inicializa com os defaults
+
+export function getSimulationBdiValues() { return { ...simulationBdiValues }; }
+export function setSimulationBdiValues(newValues) {
+    simulationBdiValues = { ...simDefaultValues, ...newValues }; // Mescla, garantindo que todos os defaults existam
+}
+
+// Resetar materialPrices para os defaults de materiaisBase
+export function resetMaterialPricesToDefault() {
     initializeMaterialPrices();
 }

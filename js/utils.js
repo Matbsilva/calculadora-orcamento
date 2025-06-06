@@ -42,7 +42,7 @@ export function debounce(func, delay) {
         }, delay);
     };
 }
-export function parseFloatStrict(value) { // Mantendo sua função original
+export function parseFloatStrict(value) {
     if (typeof value === 'string') {
         value = value.replace(',', '.'); 
     }

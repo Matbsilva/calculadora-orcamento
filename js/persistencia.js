@@ -1,31 +1,31 @@
 // js/persistencia.js
+// ... (Conteúdo completo do persistencia.js que forneci na penúltima mensagem, Parte 1 de 3 dos JS)
+// Este arquivo já deve estar correto.
 import { ui } from './ui.js';
 import {
     updateLaborCost, updateMaterialPrice, setBdiFinalAdotado, setAreaObra,
     getLaborCosts, getMaterialPrices, getBdiFinalAdotado, getAreaObra,
-    materiaisBase, // Para resetar materialPrices para os defaults ao carregar
+    materiaisBase, 
     budgetDataStructure, updateBudgetItemQuantity,
-    // Adicionando os valores da simulação BDI para persistência
-    // Assumindo que simulacoesBDI.js terá getters/setters para seu estado interno 'simValues'
+    setSimulationBdiValues, getSimulationBdiValues // Para persistir os valores da simulação BDI
 } from './data.js';
 import { calculadora } from './calculadora.js';
-import { simulacoesBDI } from './simulacoesBDI.js'; // Para salvar/carregar os valores da simulação
+// simulacoesBDI é importado em ui.js, e ui.js chama os métodos de simBDI.
+// Aqui, precisamos apenas dos getters/setters de data.js para os valores da simulação.
 
 export const persistencia = {
     saveBudget() {
         const budgetToSave = {
-            configData: { // Agrupando os dados de config que vêm de data.js
+            configData: {
                 laborCosts: getLaborCosts(),
                 materialPrices: getMaterialPrices(),
                 bdiFinalAdotado: getBdiFinalAdotado(),
                 areaObra: getAreaObra(),
-                // Adicionar aqui os valores dos inputs da simulação BDI
-                simulationValues: simulacoesBDI.getSimulationValues ? simulacoesBDI.getSimulationValues() : {}
+                simulationBdiValues: getSimulationBdiValues() // Salva os valores da simulação
             },
-            composicoes: calculadora.getItensParaSalvar(), // Pega apenas {refComposition, quantity}
+            composicoes: calculadora.getItensParaSalvar(),
             timestamp: new Date().toISOString()
         };
-
         try {
             const jsonData = JSON.stringify(budgetToSave, null, 2);
             const blob = new Blob([jsonData], { type: 'application/json' });
@@ -33,7 +33,7 @@ export const persistencia = {
             const a = document.createElement('a');
             a.href = url;
             const dataFormatada = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-            a.download = `orcamento_calc_${dataFormatada}.json`; // Nome do arquivo um pouco mais específico
+            a.download = `orcamento_calc_${dataFormatada}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -41,71 +41,40 @@ export const persistencia = {
             alert("Orçamento salvo com sucesso!");
         } catch (error) {
             console.error("Erro ao salvar orçamento:", error);
-            alert('Ocorreu um erro ao tentar salvar o orçamento. Verifique o console.');
+            alert('Ocorreu um erro ao tentar salvar o orçamento.');
         }
     },
-
     loadBudget(event) {
         const file = event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const loadedData = JSON.parse(e.target.result);
-
-                if (!loadedData || typeof loadedData.configData !== 'object' ||
-                    !Array.isArray(loadedData.composicoes)) {
-                    throw new Error("Estrutura do JSON do orçamento inválida ou dados essenciais ausentes.");
+                if (!loadedData || typeof loadedData.configData !== 'object' || !Array.isArray(loadedData.composicoes)) {
+                    throw new Error("Estrutura do JSON inválida.");
                 }
-                
-                event.target.value = null; 
-
-                if (confirm("Deseja carregar este orçamento? Todas as alterações não salvas serão perdidas.")) {
+                event.target.value = null;
+                if (confirm("Deseja carregar este orçamento? Alterações não salvas serão perdidas.")) {
                     const { configData, composicoes } = loadedData;
-
-                    // Restaurar dados de config em data.js
-                    if (configData.laborCosts) {
-                        for (const key in configData.laborCosts) {
-                            if (getLaborCosts().hasOwnProperty(key)) {
-                                updateLaborCost(key, configData.laborCosts[key]);
-                            }
-                        }
-                    }
-                    // Resetar e carregar preços de materiais
+                    if (configData.laborCosts) { Object.keys(configData.laborCosts).forEach(k => { if (getLaborCosts().hasOwnProperty(k)) updateLaborCost(k, configData.laborCosts[k]); }); }
                     Object.keys(materiaisBase).forEach(idMat => updateMaterialPrice(idMat, materiaisBase[idMat].precoUnitarioDefault));
-                    if (configData.materialPrices) {
-                        for (const key in configData.materialPrices) {
-                            if (materiaisBase.hasOwnProperty(key)) {
-                                updateMaterialPrice(key, configData.materialPrices[key]);
-                            }
-                        }
-                    }
+                    if (configData.materialPrices) { Object.keys(configData.materialPrices).forEach(k => { if (materiaisBase.hasOwnProperty(k)) updateMaterialPrice(k, configData.materialPrices[k]); }); }
                     setBdiFinalAdotado(configData.bdiFinalAdotado !== undefined ? configData.bdiFinalAdotado : 105.00);
                     setAreaObra(configData.areaObra !== undefined ? configData.areaObra : 100);
-
-                    // Restaurar valores da simulação BDI
-                    if (configData.simulationValues && simulacoesBDI.setSimulationValues) {
-                        simulacoesBDI.setSimulationValues(configData.simulationValues);
-                    }
+                    if (configData.simulationBdiValues) { setSimulationBdiValues(configData.simulationBdiValues); }
                     
-                    // Restaurar quantidades na calculadora
-                    calculadora.setItens(composicoes); // setItens já lida com zerar e aplicar quantidades
-                    
-                    ui.resetUI(); // Isso deve recarregar todas as UIs e atualizar abas
+                    calculadora.setItens(composicoes);
+                    ui.resetUI(); // Chama para atualizar todas as UIs com os novos dados carregados
                     alert('Orçamento carregado com sucesso!');
                 }
-
             } catch (error) {
                 console.error("Erro ao carregar orçamento:", error);
-                alert('Erro ao carregar orçamento: O arquivo selecionado não é um JSON válido, está corrompido ou não corresponde à estrutura esperada.');
+                alert('Erro ao carregar orçamento: Arquivo inválido ou estrutura incorreta.');
                 event.target.value = null;
             }
         };
-        reader.onerror = () => {
-            alert('Erro ao ler o arquivo.');
-            event.target.value = null;
-        };
+        reader.onerror = () => { alert('Erro ao ler o arquivo.'); event.target.value = null; };
         reader.readAsText(file);
     }
 };

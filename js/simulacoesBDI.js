@@ -1,84 +1,68 @@
 // js/simulacoesBDI.js
+// ... (Conteúdo completo do simulacoesBDI.js que forneci na mensagem anterior, que começa com "import { configManager } from './config.js';")
+// Este arquivo já estava correto e com a lógica dos 4 blocos e persistência dos simValues.
+// Repetindo para garantir que você tenha a versão certa nesta sequência final.
 import { formatPercentage, formatCurrency, parseFloatStrict } from './utils.js';
 import { ui } from './ui.js';
-// Importa funções de data.js para ler/escrever os percentuais da simulação,
-// que agora serão armazenados lá para persistência.
-import {
-    laborCosts, // Para pegar os nomes dos campos de input de % da simulação
-    getBdiFinalAdotado, // Não usado diretamente aqui, mas para referência
-    // Precisamos de getters e setters em data.js para os campos de % da simulação BDI.
-    // Ex: getSimAdminMO, setSimAdminMO, etc.
-    // Por ora, vamos assumir que eles são parte de um objeto 'simulacaoConfig' em data.js
-    // ou que configManager pode lê-los/escrevê-los se estiverem em 'laborCosts' ou 'materialPrices'
-    // com prefixos específicos.
-    // Para simplificar, vamos ler/escrever em variáveis locais ao módulo e
-    // o persistencia.js vai salvar/carregar esses valores específicos.
-} from './data.js'; 
-// configManager não é mais diretamente necessário aqui se os valores da simulação
-// são locais ou gerenciados por data.js via persistencia
-
-// Estado local para os inputs da simulação BDI.
-// Estes serão preenchidos pelo loadBudget ou terão valores padrão.
-const simValues = {
-    simAdminMO: 10.0, simRiscoMO: 5.0, simCustoFinMO: 1.0, simTributosMO: 5.0, simLucroMO: 15.0,
-    simAdminMat: 10.0, simRiscoMat: 5.0, simCustoFinMat: 1.0, simTributosMat: 13.0, simLucroMat: 15.0,
-    simPercFatMO: 50.0
-};
+import { getSimulationBdiValues, setSimulationBdiValues, simDefaultValues } from './data.js';
 
 export const simulacoesBDI = {
+    // Os valores agora são gerenciados em data.js via getSimulationBdiValues/setSimulationBdiValues
+    
     init() {
-        this.populateInputsFromState(); // Popula inputs com simValues
+        this.loadValuesFromData(); 
         this.setupEventListeners();
-        this.recalculateAllBlocks(); // Calcula tudo na inicialização
+        this.recalculateAllBlocks(); 
     },
 
-    populateInputsFromState() {
-        for (const key in simValues) {
-            const inputElement = document.getElementById(key);
+    loadValuesFromData() {
+        const currentSimValues = getSimulation for (const helperKey in itemBase.helpers) { hhAjudTotalItem += (itemBase.helpers[helperKey] || 0) * quantidade; } } else if (itemBase.unitHHelper) { hhAjudTotalItem = (itemBase.unitHHelper || 0) * quantidade; } const pesoTotalItem = (itemBase.unitWeight || 0) * quantidade; this.itensAtivosNaTabela.push({ ...itemBase, quantidade: quantidade, custoMaterialUnitarioCalc: custoMaterialUnitario, custoMOUUnitarioCalc: custoMaoDeObraUnitario, custoUnitarioTotalCalc: custoUnitarioTotal, custoMatTotalItemCalc: custoMatTotalItem, custoMOTotalItemCalc: custoMOTotalItem, custoItemTotalDiretoCalc: custoItemTotalDireto, precoVendaItemCalc: precoVendaItem, hhProfTotalItemCalc: hhProfTotalItem, hhAjudTotalItemCalc: hhAjudTotalItem, pesoTotalItemCalc: pesoTotalItem }); const tr = tbody.insertRow(); tr.setAttribute('data-id', itemBase.refComposition); tr.insertCell().textContent = itemBase.description; tr.insertCell().textContent = itemBase.refComposition; tr.insertCell().textContent = itemBase.unit; const tdQuantidade = tr.insertCell(); const inputQuantidade = document.createElement('input'); inputQuantidade.type = 'text'; inputQuantidade.value = parseFloatStrict(quantidade).toFixed(2).replace('.', ','); inputQuantidade.classList.add('input-quantidade'); inputQuantidade.id = `quantidade-${itemBase.refComposition}`; const errorSpanQuantidade = document.createElement('span'); errorSpanQuantidade.classList.add('error-message'); errorSpanQuantidade.id = `quantidade-${itemBase.refComposition}Error`; tdQuantidade.appendChild(inputQuantidade); tdQuantidade.appendChild(errorSpanQuantidade); inputQuantidade.addEventListener('blur', (event) => { this.atualizarQuantidade(itemBase.refComposition, event.target.value); }); inputQuantidade.addEventListener('focus', () => { if (ui.clearInputError) ui.clearInputError(inputQuantidade); }); tr.insertCell().textContent = formatCurrency(custoMaterialUnitario); tr.insertCell().textContent = formatCurrency(custoMaoDeObraUnitario); tr.insertCell().textContent = formatCurrency(custoUnitarioTotal); tr.insertCell().textContent = formatCurrency(custoMatTotalItem); tr.insertCell().textContent = formatCurrency(custoMOTotalItem); tr.insertCell().textContent = formatCurrency(custoItemTotalDireto); tr.insertCell().textContent = formatCurrency(precoVendaItem); tr.insertCell().textContent = hhProfTotalItem.toFixed(2).replace('.',','); tr.insertCell().textContent = hhAjudTotalItem.toFixed(2).replace('.',','); tr.insertCell().textContent = pesoTotalItem.toFixed(2).replace('.',','); const tdControles = tr.insertCell(); const btnRemover = document.createElement('button'); btnRemover.textContent = 'Excluir'; btnRemover.classList.add('btn-remover'); btnRemover.setAttribute('aria-label', `Excluir item ${itemBase.description}`); btnRemover.addEventListener('click', () => this.removerItem(itemBase.refComposition)); tdControles.appendChild(btnRemover); }); } this.atualizarTotalTabela(); this.updateBdiAdotadoDisplay(); },
+    atualizarTotalTabela() { /* ... (lógica igual à da última vez, com todas as colunas do rodapé) ... */ const rodapeContainer = document.getElementById('tabelaCalculadoraRodape'); if (!rodapeContainer) return; rodapeContainer.innerHTML = ''; const totalMat = this.itensAtivosNaTabela.reduce((acc, item) => acc + item.custoMatTotalItemCalc, 0); const totalMO = this.itensAtivosNaTabela.reduce((acc, item) => acc + item.custoMOTotalItemCalc, 0); const totalDireto = this.itensAtivosNaTabela.reduce((acc, item) => acc + item.custoItemTotalDiretoCalc, 0); const totalVenda = this.itensAtivosNaTabela.reduce((acc, item) => acc + item.precoVendaItemCalc, 0BdiValues();
+        for (const key in currentSimValues) {
+            const inputElement = document.getElementById(key); // IDs dos inputs devem ser iguais às chaves em simValues
             if (inputElement) {
-                inputElement.value = formatPercentage(simValues[key], (key === 'simPercFatMO' ? 2 : 1) ); // Ajusta casas decimais
+                inputElement.value = formatPercentage(currentSimValues[key], (key === 'simPercFatMO' ? 2 : 1) );
                 if (ui.clearInputError) ui.clearInputError(inputElement);
             }
         }
-        // Atualiza simPercFatMat que depende de simPercFatMO
-        const percFatMatInput = document.getElementById('simPercFatMat');
-        if (percFatMatInput) {
-            percFatMatInput.value = formatPercentage(100 - simValues.simPercFatMO);
-        }
+        this.updateDependentFields(currentSimValues.simPercFatMO); // Atualiza % Mat Faturamento
     },
-    
-    // Função para persistencia.js carregar os valores salvos
-    setSimulationValues(loadedSimValues) {
-        for (const key in loadedSimValues) {
-            if (simValues.hasOwnProperty(key)) {
-                simValues[key] = loadedSimValues[key];
-            }
-        }
-        this.populateInputsFromState();
+
+    // Chamado por persistencia.js ao carregar orçamento
+    restoreSimulationValues(loadedValues) {
+        setSimulationBdiValues(loadedValues); // Atualiza em data.js
+        this.loadValuesFromData(); // Recarrega na UI
         this.recalculateAllBlocks();
     },
 
-    // Função para persistencia.js obter os valores para salvar
-    getSimulationValues() {
-        return { ...simValues };
+    // Chamado por persistencia.js ao salvar orçamento
+    getCurrentSimulationValues() {
+        return getSimulationBdiValues(); // Pega de data.js
+    },
+    
+    updateDependentFields(percFatMO) {
+        const percFatMatInput = document.getElementById('simPercFatMat');
+        if (percFatMatInput) {
+            const percMat = 100 - parseFloatStrict(percFatMO);
+            percFatMatInput.value = formatPercentage(percMat);
+        }
     },
 
     setupEventListeners() {
-        const inputIds = Object.keys(simValues); // Todos os inputs que afetam os cálculos
-        inputIds.forEach(id => {
+        const simValueKeys = Object.keys(simDefaultValues); // Usa as chaves dos defaults para identificar inputs
+        simValueKeys.forEach(id => {
             const inputElement = document.getElementById(id);
-            if (inputElement) {
+            if (inputElement && !inputElement.readOnly) { // Não adiciona listener para campos readonly como simPercFatMat
                 inputElement.addEventListener('blur', (event) => {
                     if (ui.clearInputError) ui.clearInputError(inputElement);
                     let value = parseFloatStrict(event.target.value.replace('%','').replace(',','.'));
                     let min = 0, max = 100;
-                    // Validação específica
-                    if (id === 'simTributosMat') max = 100; // Pode ser alto com ICMS+IPI
-                    else if (id.includes('Lucro')) max = 1000; // Lucro pode ser > 100%
+                    if (id.includes('Lucro')) max = 1000; 
+                    else if (id === 'simTributosMat') max = 100; // Pode ser alto
 
                     if (isNaN(value)) {
                         if(ui.showInputError) ui.showInputError(inputElement, 'Valor inválido.');
-                        value = simValues[id]; // Reverte
+                        value = getSimulationBdiValues()[id]; // Reverte para valor de data.js
                     } else if (value < min) {
                         if(ui.showInputError) ui.showInputError(inputElement, `Mínimo ${min}%.`);
                         value = min;
@@ -87,16 +71,14 @@ export const simulacoesBDI = {
                         value = max;
                     }
                     event.target.value = formatPercentage(value, (id === 'simPercFatMO' ? 2 : 1) );
-                    simValues[id] = value;
+                    
+                    // Atualiza o valor em data.js
+                    const currentSimData = getSimulationBdiValues();
+                    currentSimData[id] = value;
+                    setSimulationBdiValues(currentSimData);
 
-                    // Se simPercFatMO mudou, atualiza simPercFatMat
                     if (id === 'simPercFatMO') {
-                        const percFatMatInput = document.getElementById('simPercFatMat');
-                        if (percFatMatInput) {
-                            const percMat = 100 - value;
-                            percFatMatInput.value = formatPercentage(percMat);
-                            // simValues.simPercFatMat não é um input direto, mas usado no cálculo do Bloco 4
-                        }
+                        this.updateDependentFields(value);
                     }
                     this.recalculateAllBlocks();
                 });
@@ -108,113 +90,84 @@ export const simulacoesBDI = {
     recalculateAllBlocks() {
         const custoTotalMO = ui.calculadora.getTotalCustoMO();
         const custoTotalMat = ui.calculadora.getTotalCustoMaterial();
+        const currentSimData = getSimulationBdiValues();
 
-        document.getElementById('simCustoDiretoMO').value = formatCurrency(custoTotalMO);
-        document.getElementById('simCustoDiretoMat').value = formatCurrency(custoTotalMat);
+        const simCustoDiretoMOEl = document.getElementById('simCustoDiretoMO');
+        if(simCustoDiretoMOEl) simCustoDiretoMOEl.value = formatCurrency(custoTotalMO);
+        const simCustoDiretoMatEl = document.getElementById('simCustoDiretoMat');
+        if(simCustoDiretoMatEl) simCustoDiretoMatEl.value = formatCurrency(custoTotalMat);
 
         // Bloco 1: Mão de Obra
-        const bdiFatorMO = this.calculateBdiFactor(simValues.simAdminMO, simValues.simRiscoMO, simValues.simCustoFinMO, simValues.simTributosMO, simValues.simLucroMO);
-        document.getElementById('simBdiFatorMO').textContent = formatPercentage(bdiFatorMO * 100 - 100);
-        const totalComBdiMO = custoTotalMO * bdiFatorMO;
-        const impostoValorMO = totalComBdiMO * (simValues.simTributosMO / 100);
+        const bdiMultiplicadorMO = this.calculateBdiMultiplier(currentSimData.simAdminMO, currentSimData.simRiscoMO, currentSimData.simCustoFinMO, currentSimData.simTributosMO, currentSimData.simLucroMO);
+        document.getElementById('simBdiFatorMO').textContent = formatPercentage(bdiMultiplicadorMO * 100); // Exibe como multiplicador * 100%
+        const totalComBdiMO = custoTotalMO * bdiMultiplicadorMO;
+        const impostoValorMO = totalComBdiMO * (currentSimData.simTributosMO / 100);
         const totalMenosImpostoMO = totalComBdiMO - impostoValorMO;
-        const lucroMO = totalComBdiMO * (simValues.simLucroMO / 100) / (1 - (simValues.simTributosMO / 100)); // Ajuste para lucro sobre preço de venda - imposto
+        // Lucro sobre (Custo Direto + Custos Indiretos)
+        const lucroBaseMO = custoTotalMO * (1 + (currentSimData.simAdminMO/100) + (currentSimData.simRiscoMO/100) + (currentSimData.simCustoFinMO/100));
+        const lucroValorMO = lucroBaseMO / (1 - (currentSimData.simTributosMO/100) - (currentSimData.simLucroMO/100)) * (currentSimData.simLucroMO/100);
         
-        this.updateResumoTable('simResumoBloco1', {
-            custoMO: custoTotalMO, totalComBdiMO, totalMenosImpostoMO, lucroMO,
-            percLucroMO: custoTotalMO > 0 ? (lucroMO / custoTotalMO) * 100 : 0
-        });
+        this.updateResumoTable('simResumoBloco1Body', { custoMO: custoTotalMO, totalComBdiMO, totalMenosImpostoMO, lucroMO: lucroValorMO, percLucroMO: custoTotalMO > 0 ? (lucroValorMO / custoTotalMO) * 100 : 0 });
 
         // Bloco 2: Materiais
-        const bdiFatorMat = this.calculateBdiFactor(simValues.simAdminMat, simValues.simRiscoMat, simValues.simCustoFinMat, simValues.simTributosMat, simValues.simLucroMat);
-        document.getElementById('simBdiFatorMat').textContent = formatPercentage(bdiFatorMat * 100 - 100);
-        const totalComBdiMat = custoTotalMat * bdiFatorMat;
-        const impostoValorMat = totalComBdiMat * (simValues.simTributosMat / 100);
+        const bdiMultiplicadorMat = this.calculateBdiMultiplier(currentSimData.simAdminMat, currentSimData.simRiscoMat, currentSimData.simCustoFinMat, currentSimData.simTributosMat, currentSimData.simLucroMat);
+        document.getElementById('simBdiFatorMat').textContent = formatPercentage(bdiMultiplicadorMat * 100);
+        const totalComBdiMat = custoTotalMat * bdiMultiplicadorMat;
+        const impostoValorMat = totalComBdiMat * (currentSimData.simTributosMat / 100);
         const totalMenosImpostoMat = totalComBdiMat - impostoValorMat;
-        const lucroMat = totalComBdiMat * (simValues.simLucroMat / 100) / (1 - (simValues.simTributosMat / 100));
+        const lucroBaseMat = custoTotalMat * (1 + (currentSimData.simAdminMat/100) + (currentSimData.simRiscoMat/100) + (currentSimData.simCustoFinMat/100));
+        const lucroValorMat = lucroBaseMat / (1 - (currentSimData.simTributosMat/100) - (currentSimData.simLucroMat/100)) * (currentSimData.simLucroMat/100);
 
-        this.updateResumoTable('simResumoBloco2', {
-            custoMat: custoTotalMat, totalComBdiMat, totalMenosImpostoMat, lucroMat,
-            percLucroMat: custoTotalMat > 0 ? (lucroMat / custoTotalMat) * 100 : 0
-        });
+        this.updateResumoTable('simResumoBloco2Body', { custoMat: custoTotalMat, totalComBdiMat, totalMenosImpostoMat, lucroMat: lucroValorMat, percLucroMat: custoTotalMat > 0 ? (lucroValorMat / custoTotalMat) * 100 : 0 });
 
         // Bloco 3: Resumo da Simulação
         const valorTotalSimulado = totalComBdiMO + totalComBdiMat;
         const valorTotalMenosImpostosSimulado = totalMenosImpostoMO + totalMenosImpostoMat;
         const custoDiretoTotalSimulado = custoTotalMO + custoTotalMat;
-        const lucroTotalSimulado = lucroMO + lucroMat;
-        this.updateResumoTable('simResumoBloco3', {
-            valorTotalSimulado, valorTotalMenosImpostosSimulado, custoDiretoTotalSimulado, lucroTotalSimulado,
-            percLucroTotalSimulado: custoDiretoTotalSimulado > 0 ? (lucroTotalSimulado / custoDiretoTotalSimulado) * 100 : 0
-        });
+        const lucroTotalSimulado = lucroValorMO + lucroValorMat;
+        this.updateResumoTable('simResumoBloco3Body', { valorTotalSimulado, valorTotalMenosImpostosSimulado, custoDiretoTotalSimulado, lucroTotalSimulado, percLucroTotalSimulado: custoDiretoTotalSimulado > 0 ? (lucroTotalSimulado / custoDiretoTotalSimulado) * 100 : 0 });
 
         // Bloco 4: Ajustes de Faturamento
-        const percFatMOVal = simValues.simPercFatMO;
+        const percFatMOVal = currentSimData.simPercFatMO;
         const percFatMatVal = 100 - percFatMOVal;
-        
-        const faturamentoBase = valorTotalSimulado; // Preço de Venda Bruto do Bloco 3
-
+        const faturamentoBase = valorTotalSimulado;
         const valorTotalFaturadoMO = faturamentoBase * (percFatMOVal / 100);
         const valorTotalFaturadoMat = faturamentoBase * (percFatMatVal / 100);
-
-        // Impostos sobre o faturamento (usando os % de tributos dos blocos 1 e 2)
-        const impostoValorFatMO = valorTotalFaturadoMO * (simValues.simTributosMO / 100);
-        const impostoValorFatMat = valorTotalFaturadoMat * (simValues.simTributosMat / 100);
-        
+        const impostoValorFatMO = valorTotalFaturadoMO * (currentSimData.simTributosMO / 100);
+        const impostoValorFatMat = valorTotalFaturadoMat * (currentSimData.simTributosMat / 100);
         const valorMenosImpostoFatMO = valorTotalFaturadoMO - impostoValorFatMO;
         const valorMenosImpostoFatMat = valorTotalFaturadoMat - impostoValorFatMat;
-
-        this.updateResumoTable('simResumoBloco4_Ajuste', {
-            faturamentoPercMO: percFatMOVal, faturamentoPercMat: percFatMatVal,
-            valorTotalFaturadoMO, valorTotalFaturadoMat,
-            impostoValorMO: impostoValorFatMO, impostoValorMat: impostoValorFatMat,
-            valorMenosImpostoMO: valorMenosImpostoFatMO, valorMenosImpostoMat: valorMenosImpostoFatMat,
-        }, true); // true para indicar que é a tabela de ajuste com colunas MO/Mat
-
+        this.updateResumoTable('simResumoBloco4AjusteBody', { faturamentoPercMO: percFatMOVal, faturamentoPercMat: percFatMatVal, valorTotalFaturadoMO, valorTotalFaturadoMat, impostoValorMO: impostoValorFatMO, impostoValorMat: impostoValorFatMat, valorMenosImpostoMO: valorMenosImpostoFatMO, valorMenosImpostoMat: valorMenosImpostoFatMat, }, true);
         const valorTotalFaturadoGeral = valorTotalFaturadoMO + valorTotalFaturadoMat;
         const valorTotalFaturadoMenosImpostoGeral = valorMenosImpostoFatMO + valorMenosImpostoFatMat;
-        const custoDiretoTotalAjuste = custoTotalMO + custoTotalMat; // Permanece o mesmo
+        const custoDiretoTotalAjuste = custoTotalMO + custoTotalMat;
         const lucroAjustado = valorTotalFaturadoMenosImpostoGeral - custoDiretoTotalAjuste;
-        
-        this.updateResumoTable('simResumoBloco4_Final', {
-            valorTotalFaturadoGeral, valorTotalFaturadoMenosImpostoGeral,
-            custoDiretoTotalAjuste, lucroAjustado,
-            percLucroAjustado: custoDiretoTotalAjuste > 0 ? (lucroAjustado / custoDiretoTotalAjuste) * 100 : 0
-        });
+        this.updateResumoTable('simResumoBloco4FinalBody', { valorTotalFaturadoGeral, valorTotalFaturadoMenosImpostoGeral, custoDiretoTotalAjuste, lucroAjustado, percLucroAjustado: custoDiretoTotalAjuste > 0 ? (lucroAjustado / custoDiretoTotalAjuste) * 100 : 0 });
     },
-
-    calculateBdiFactor(admin, risco, custoFin, tributos, lucro) {
+    calculateBdiMultiplier(admin, risco, custoFin, tributos, lucro) {
         const AC = admin / 100;
         const R = risco / 100;
         const CF = custoFin / 100;
         const T = tributos / 100;
         const L = lucro / 100;
         const denominador = 1 - T - L;
-        if (denominador <= 0) return 1; // Evita divisão por zero, BDI de 0%
+        if (denominador <= 0) return 1;
         return (1 + AC + R + CF) / denominador;
     },
-
-    updateResumoTable(tableBodyId, data, isAdjustmentTable = false) {
-        const tbody = document.getElementById(tableBodyId);
+    updateResumoTable(tbodyId, data, isAdjustmentTable = false) {
+        const tbody = document.getElementById(tbodyId);
         if (!tbody) return;
-
         tbody.querySelectorAll('tr').forEach(row => {
-            const key = row.cells[0].textContent.trim(); // Ou use um data-key se preferir
-            let dataKeyToFind = Object.keys(data).find(dk => row.cells[1].dataset.value === dk); // Usa data-value
-
-            if (isAdjustmentTable) { // Tabela com colunas MO e Material
+            const dataValueKey = row.cells[isAdjustmentTable ? 1 : 1].dataset.value; // Pega do segundo td se não for adjustment, ou do primeiro td de valor
+            if (isAdjustmentTable) {
                 const keyMO = row.cells[1].dataset.value;
                 const keyMat = row.cells[2].dataset.value;
-                if (data[keyMO] !== undefined) {
-                    row.cells[1].textContent = keyMO.toLowerCase().includes('perc') ? formatPercentage(data[keyMO]) : formatCurrency(data[keyMO]);
-                }
-                if (data[keyMat] !== undefined) {
-                     row.cells[2].textContent = keyMat.toLowerCase().includes('perc') ? formatPercentage(data[keyMat]) : formatCurrency(data[keyMat]);
-                }
-            } else { // Tabela normal com uma coluna de valor
-                 if (dataKeyToFind && data[dataKeyToFind] !== undefined) {
-                    const value = data[dataKeyToFind];
-                    row.cells[1].textContent = dataKeyToFind.toLowerCase().includes('perc') ? formatPercentage(value) : formatCurrency(value);
+                if (data[keyMO] !== undefined) row.cells[1].textContent = keyMO.toLowerCase().includes('perc') ? formatPercentage(data[keyMO]) : formatCurrency(data[keyMO]);
+                if (data[keyMat] !== undefined) row.cells[2].textContent = keyMat.toLowerCase().includes('perc') ? formatPercentage(data[keyMat]) : formatCurrency(data[keyMat]);
+            } else {
+                if (data[dataValueKey] !== undefined) {
+                    const value = data[dataValueKey];
+                    row.cells[1].textContent = dataValueKey.toLowerCase().includes('perc') ? formatPercentage(value) : formatCurrency(value);
                 }
             }
         });
