@@ -1,275 +1,58 @@
 // js/ui.js
-// Módulo responsável por interações com a interface do usuário,
-// manipulação do DOM, e coordenação da inicialização de outros módulos visuais.
+// ... (Conteúdo completo do ui.js que forneci na Parte 3 de 3 (Final) dos JS - a versão mais recente)
+// Este arquivo já estava correto e completo.
+import { configManager } from './config.js';
+import { calculadora as calc } from './calculadora.js';
+import { simulacoesBDI as simBDI } from './simulacoesBDI.js';
+import { parseCurrency, formatCurrency, parsePercentage, formatPercentage, debounce, parseFloatStrict } from './utils.js';
+import { budgetDataStructure as baseListaServicos, getAreaObra, getBdiFinalAdotado, getLaborCosts, getMaterialPrices, getSimulationBdiValues, setSimulationBdiValues, simDefaultValues, resetMaterialPricesToDefault, laborCosts as initialLaborCosts, bdiFinalAdotado as initialBdiFinalAdotado, areaObra as initialAreaObra } from './data.js';
+import { persistencia } from './persistencia.js';
+import { handlers } from './handlers.js';
+import { resumoFinanceiro, listas as moduloListas, curvaABC, cronogramaEstimado } from './relatorios.js';
+import { initGraficoCurvaABC, renderizarGraficoCurvaABC, destroyChartCurvaABC } from './graficoCurvaABC.js';
+import { initGraficoPizzaCustos, renderizarGraficoPizzaCustos, destroyChartPizzaCustos } from './graficoPizzaCustos.js';
+import { initGraficoGantt, renderizarGraficoGantt, destroyChartGantt } from './graficoGantt.js';
 
-import configManager from './config.js';
-import calculadora from './calculadora.js';
-import simBDI from './simulacoesBDI.js';
-import { updateAllReports, updateReportVisibility, getReportData, generateResumoHTML } from './relatorios.js'; // Assumindo que relatorios.js exporta estas.
-import { initGraficoPizzaCustos, updateGraficoPizzaCustos, getChartDataPizza } from './graficoPizzaCustos.js';
-import { initGraficoCurvaABC, updateGraficoCurvaABC, getChartDataCurvaABC } from './graficoCurvaABC.js';
-import { initGraficoGanttEstimado, updateGraficoGanttEstimado, getChartDataGantt } from './graficoGantt.js';
-import { setupEventListeners } from './handlers.js';
-import { formatCurrency, parseCurrency, showAlert, debounce } from './utils.js'; // Adicionado debounce como exemplo de utilitário comum
-import { budgetDataStructure, getMaterialList, getComposicaoPorNome } from './data.js'; // Funções de data.js podem ser necessárias para popular UIs.
-// persistencia.js é mais provável de ser chamado por handlers.js ou main.js, mas ui pode precisar de feedback
-// import { saveStateToFile, loadStateFromFile, resetApplicationState } from './persistencia.js';
+export const ui = {
+    currentTab: 'configuracoes', 
+    calculadora: calc, 
+    simulacoesBDI: simBDI, 
+    init() { this.setupTabNavigation(); this.populateServicosSelect(); this.setupEventListeners(); configManager.init(); calc.init(); simBDI.init(); initGraficoCurvaABC(); initGraficoPizzaCustos(); initGraficoGantt(); this.changeTab(this.currentTab, true); document.getElementById('currentYear').textContent = new Date().getFullYear(); },
+    setupTabNavigation() { const tabLinks = document.querySelectorAll('.tab-link'); tabLinks.forEach(link => { const tabContentId = link.dataset.tab; link.id = `tab-link-${tabContentId}`; link.addEventListener('click', () => this.changeTab(tabContentId)); link.setAttribute('role', 'tab'); link.setAttribute('aria-selected', 'false'); link.setAttribute('tabindex', '-1'); link.setAttribute('aria-controls', tabContentId); const tabContent = document.getElementById(tabContentId); if (tabContent) { tabContent.setAttribute('role', 'tabpanel'); tabContent.setAttribute('aria-labelledby', link.id); } }); const firstTabLink = document.querySelector(`.tab-link[data-tab="${this.currentTab}"]`); if (firstTabLink) { firstTabLink.classList.add('active'); firstTabLink.setAttribute('aria-selected', 'true'); firstTabLink.setAttribute('tabindex', '0'); const firstTabContent = document.getElementById(this.currentTab); if (firstTabContent) firstTabContent.classList.add('active'); } },
+    changeTab(tabId, isInitialLoad = false) { if (this.currentTab !== tabId || isInitialLoad) { if (this.currentTab === 'curva-abc' && typeof destroyChartCurvaABC === 'function') destroyChartCurvaABC(); if (this.currentTab === 'resumo' && typeof destroyChartPizzaCustos === 'function') destroyChartPizzaCustos(); if (this.currentTab === 'cronograma' && typeof destroyChartGantt === 'function') destroyChartGantt(); document.querySelectorAll('.tab-content.active').forEach(content => content.classList.remove('active')); document.querySelectorAll('.tab-link.active').forEach(link => { link.classList.remove('active'); link.setAttribute('aria-selected', 'false'); link.setAttribute('tabindex', '-1'); }); const activeTabLink = document.getElementById(`tab-link-${tabId}`); const activeTabContent = document.getElementById(tabId); if(activeTabLink) { activeTabLink.classList.add('active'); activeTabLink.setAttribute('aria-selected', 'true'); activeTabLink.setAttribute('tabindex', '0'); if (!isInitialLoad && document.activeElement !== activeTabLink) activeTabLink.focus(); } if(activeTabContent) activeTabContent.classList.add('active'); this.currentTab = tabId; } if (isInitialLoad) { this.updateAllTabs(); } else { this.updateCurrentTabContent(); } },
+    updateCurrentTabContent() { const itensParaRelatorio = calc.getItensComCustosCalculados(); const configParaResumo = { bdiFinal: getBdiFinalAdotado(), areaObra: getAreaObra() }; const totalCustoDireto = calc.getTotalCustoDireto(); const precoVendaTotal = totalCustoDireto * (1 + configParaResumo.bdiFinal / 100); const duracaoInput = document.getElementById('inputDuracaoEstimada'); const duracao = duracaoInput ? (parseInt(duracaoInput.value, 10) || 6) : 6; switch (this.currentTab) { case 'resumo': if (resumoFinanceiro && resumoFinanceiro.updateResumo) resumoFinanceiro.updateResumo(itensParaRelatorio, configParaResumo); if (typeof renderizarGraficoPizzaCustos === 'function') renderizarGraficoPizzaCustos(calc.getTotalCustoMaterial(), calc.getTotalCustoMO()); break; case 'listas': if (moduloListas && moduloListas.updateListaServicos) moduloListas.updateListaServicos(itensParaRelatorio); if (moduloListas && moduloListas.updateListaMateriais) moduloListas.updateListaMateriais(); break; case 'curva-abc': if (curvaABC && curvaABC.updateCurvaABC) { const dadosCurva = curvaABC.updateCurvaABC(itensParaRelatorio); if (typeof renderizarGraficoCurvaABC === 'function') renderizarGraficoCurvaABC(dadosCurva); } break; case 'cronograma': if (cronogramaEstimado && cronogramaEstimado.updateCronograma) cronogramaEstimado.updateCronograma(precoVendaTotal, duracao); if (typeof renderizarGraficoGantt === 'function') renderizarGraficoGantt(itensParaRelatorio, duracao, new Date()); break; case 'simulacoes-bdi': if (simBDI && simBDI.recalculateAllBlocks) simBDI.recalculateAllBlocks(); break; case 'configuracoes': if(configManager && configManager.loadConfigValuesToUI) configManager.loadConfigValuesToUI(); break; case 'calculadora': if(calc && calc.recalcularTodosOsCustos) calc.recalcularTodosOsCustos(); break; } },
+    updateAllTabs() { if(calc && calc.recalcularTodosOsCustos) calc.recalcularTodosOsCustos(); const itensParaRelatorio = calc.getItensComCustosCalculados(); const configParaResumo = { bdiFinal: getBdiFinalAdotado(), areaObra: getAreaObra() }; const totalCustoDireto = calc.getTotalCustoDireto(); const precoVendaTotal = totalCustoDireto * (1 + configParaResumo.bdiFinal / 100); const duracaoInput = document.getElementById('inputDuracaoEstimada'); const duracao = duracaoInput ? (parseInt(duracaoInput.value, 10) || 6) : 6; if (resumoFinanceiro && resumoFinanceiro.updateResumo) resumoFinanceiro.updateResumo(itensParaRelatorio, configParaResumo); if (moduloListas && moduloListas.updateListaServicos) moduloListas.updateListaServicos(itensParaRelatorio); if (moduloListas && moduloListas.updateListaMateriais) moduloListas.updateListaMateriais(); if (curvaABC && curvaABC.updateCurvaABC) { const dadosCurva = curvaABC.updateCurvaABC(itensParaRelatorio); if (this.currentTab === 'curva-abc' && typeof renderizarGraficoCurvaABC === 'function') renderizarGraficoCurvaABC(dadosCurva); else if (typeof destroyChartCurvaABC === 'function') destroyChartCurvaABC(); } if (cronogramaEstimado && cronogramaEstimado.updateCronograma) cronogramaEstimado.updateCronograma(precoVendaTotal, duracao); if (simBDI && simBDI.recalculateAllBlocks) simBDI.recalculateAllBlocks(); if (this.currentTab === 'resumo' && typeof renderizarGraficoPizzaCustos === 'function') renderizarGraficoPizzaCustos(calc.getTotalCustoMaterial(), calc.getTotalCustoMO()); else if (typeof destroyChartPizzaCustos === 'function') destroyChartPizzaCustos(); if (this.currentTab === 'cronograma' && typeof renderizarGraficoGantt === 'function') renderizarGraficoGantt(itensParaRelatorio, duracao, new Date()); else if (typeof destroyChartGantt === 'function') destroyChartGantt(); if (configManager && configManager.loadConfigValuesToUI) configManager.loadConfigValuesToUI(); },
+    populateServicosSelect() { const select = document.getElementById('selectServico'); if (!select) return; while (select.options.length > 1) select.remove(1); baseListaServicos.forEach(servico => { const option = document.createElement('option'); option.value = servico.refComposition; option.textContent = servico.description; select.appendChild(option); }); },
+    showInputError(inputElement, message) { if (!inputElement) return; const errorElementId = inputElement.id + 'Error'; const errorElement = document.getElementById(errorElementId); inputElement.classList.add('input-error'); if (errorElement) { errorElement.textContent = message; errorElement.style.display = 'block'; } },
+    clearInputError(inputElement) { if (!inputElement) return; const errorElementId = inputElement.id + 'Error'; const errorElement = document.getElementById(errorElementId); inputElement.classList.remove('input-error'); if (errorElement) { errorElement.textContent = ''; errorElement.style.display = 'none'; } },
+    formatCurrencyInputOnBlur(event) { const input = event.target; this.clearInputError(input); let value = parseCurrency(input.value); let isValid = true; if (isNaN(value)) { this.showInputError(input, 'Valor inválido.'); value = 0; isValid = false; } else if (value < 0) { this.showInputError(input, 'Não pode ser negativo.'); value = 0; isValid = false; } input.value = formatCurrency(value); return { value, isValid }; },
+    formatPercentageInputOnBlur(event, min = 0, max = 100) { const input = event.target; this.clearInputError(input); let value = parsePercentage(input.value); let isValid = true; if (isNaN(value)) { this.showInputError(input, 'Valor inválido.'); value = min; isValid = false; } else if (value < min) { this.showInputError(input, `Mínimo ${min}%.`); value = min; isValid = false; } else if (value > max) { this.showInputError(input, `Máximo ${max}%.`); value = max; isValid = false; } input.value = formatPercentage(value); return { value, isValid }; },
+    setupEventListeners() { document.getElementById('btnSalvarOrcamento').addEventListener('click', () => persistencia.saveBudget()); document.getElementById('inputCarregarOrcamento').addEventListener('change', (event) => persistencia.loadBudget(event)); document.getElementById('btnResetarAplicacao').addEventListener('click', handlers.handleResetApplication); document.getElementById('btnAdicionarServico').addEventListener('click', handlers.handleAddServico); const inputPesqServ = document.getElementById('inputPesquisaServico'); if (inputPesqServ) inputPesqServ.addEventListener('input', debounce(handlers.handleSearch, 300)); const inputDuracaoEst = document.getElementById('inputDuracaoEstimada'); if (inputDuracaoEst) { inputDuracaoEst.addEventListener('blur', () => { this.clearInputError(inputDuracaoEst); let duracao = parseInt(inputDuracaoEst.value, 10); if (isNaN(duracao) || duracao < 1) { this.showInputError(inputDuracaoEst, "Duração deve ser no mínimo 1 mês."); duracao = parseInt(inputDuracaoEst.min) || 1; } inputDuracaoEst.value = duracao; this.updateAllTabs(); }); inputDuracaoEst.addEventListener('focus', () => this.clearInputError(inputDuracaoEst)); } const inputArea = document.getElementById('inputAreaObra'); if (inputArea) { inputArea.addEventListener('blur', (event) => { const input = event.target; this.clearInputError(input); let valueStr = input.value.replace(" m²", "").replace(/[^0-9]/g, ''); let value = parseInt(valueStr, 10); if (isNaN(value) || value < 1) { this.showInputError(input, 'Área inválida. Mínimo 1 m² e deve ser inteiro.'); value = getAreaObra(); if (value < 1 || !Number.isInteger(value)) value = 1; } const intValue = value; input.value = `${intValue} m²`; setAreaObra(intValue); this.updateAllTabs(); }); inputArea.addEventListener('focus', () => this.clearInputError(inputArea)); } },
+    resetUI() { 
+        // Resetar os valores em data.js para os padrões
+        Object.keys(initialLaborCosts).forEach(key => updateLaborCost(key, initialLaborCosts[key]));
+        resetMaterialPricesToDefault(); // Usa a função de data.js
+        setBdiFinalAdotado(initialBdiFinalAdotado);
+        setAreaObra(initialAreaObra);
+        setSimulationBdiValues(simDefaultValues); // Reseta valores da simulação em data.js
 
-const ui = {
-    // Cache de elementos DOM
-    tabs: null,
-    tabContents: null,
-    activeTab: 'configuracoes', // Aba inicial padrão
-    // Adicione mais seletores aqui conforme necessário
-    // Ex: configForm: document.getElementById('form-configuracoes'),
-
-    init() {
-        console.log("ui.init() chamado");
-        this.cacheDOMElements(); // Fundamental chamar primeiro
-        if (!this.tabs || this.tabs.length === 0) {
-            console.error("UI Init: Abas não encontradas. Verifique seletores em cacheDOMElements.");
-            // Não prosseguir se elementos básicos da UI não forem encontrados.
-            return;
-        }
-        this.setupTabNavigation();
-
-        // Inicializar módulos de componentes/abas
-        // É importante a ordem de inicialização se houver dependências
-        configManager.init(this); // Passa 'this' (ui) se configManager precisar interagir com ui
-        calculadora.init(this);
-        simBDI.init(this);
-
-        // Inicializar gráficos (os elementos canvas devem existir no HTML)
-        this.initAllCharts();
-
-        // Configurar manipuladores de eventos globais e específicos da UI
-        // handlers.js pode precisar de referências a ui, configManager, calculadora, simBDI, etc.
-        setupEventListeners(this, configManager, calculadora, simBDI /*, persistencia, data etc. */);
-
-        // Exibir a primeira aba por padrão
-        this.showTab(this.activeTab, true); // true para forçar atualização inicial de conteúdo
-
-        // Atualizar dinamicamente o conteúdo (relatórios, gráficos) uma vez na inicialização
-        // Isso deve ocorrer APÓS os módulos de dados (config, calculadora, simBDI) serem inicializados
-        // e, idealmente, após o estado ser carregado (se houver).
-        // A chamada em showTab(..., true) pode já cobrir isso.
-        // this.updateDynamicDataDisplay(); // Chamada explícita se necessário
-
-        console.log("ui.init() concluído.");
+        // Atualizar a UI de config e simBDI para refletir os valores resetados
+        if(configManager && configManager.loadConfigValuesToUI) configManager.loadConfigValuesToUI();
+        if(simBDI && simBDI.loadValuesFromData) simBDI.loadValuesFromData(); // Puxa de data.js
+        
+        calc.resetCalculadora(); 
+        
+        const inputPesquisa = document.getElementById('inputPesquisaServico'); if(inputPesquisa) inputPesquisa.value = ''; 
+        const selectServ = document.getElementById('selectServico'); if(selectServ) selectServ.value = ''; 
+        const inputDuracao = document.getElementById('inputDuracaoEstimada'); if(inputDuracao) { inputDuracao.value = 6; if (this.clearInputError) this.clearInputError(inputDuracao); } 
+        
+        this.clearAllErrorMessages(); 
+        
+        if (this.currentTab !== 'configuracoes') {
+            this.changeTab('configuracoes', true); 
+        } else {
+            this.updateAllTabs(); 
+        } 
     },
-
-    cacheDOMElements() {
-        console.log("ui.cacheDOMElements()");
-        this.tabs = document.querySelectorAll('.tab-link'); // Confirme sua classe CSS
-        this.tabContents = document.querySelectorAll('.tab-content'); // Confirme sua classe CSS
-
-        // Cache para outros elementos importantes usados frequentemente
-        // Aba Configurações
-        this.configForm = document.getElementById('form-configuracoes');
-        this.inputCustoMOProfissional = document.getElementById('custo-mo-profissional');
-        this.inputCustoMOAjudante = document.getElementById('custo-mo-ajudante');
-        this.inputBDIPrevisto = document.getElementById('bdi-previsto'); // Ou bdi-final? Verificar HTML.
-        this.inputAreaObra = document.getElementById('area-obra');
-        this.materiaisConfigContainer = document.getElementById('materiais-config-container'); // Container para inputs de materiais
-
-        // Aba Calculadora
-        this.selectComposicao = document.getElementById('select-composicao');
-        this.calculadoraTableBody = document.getElementById('tabela-orcamento-body'); // Ou o ID correto
-        this.calculadoraTableFooter = document.getElementById('tabela-orcamento-footer'); // Ou o ID correto
-        this.searchInputCalculadora = document.getElementById('search-input-calculadora'); // Ou o ID correto
-        this.bdiAdotadoDisplayCalculadora = document.getElementById('bdi-adotado-calculadora'); // Elemento para mostrar BDI
-
-        // Aba Simulações BDI (Exemplos de IDs, ajuste conforme seu HTML)
-        // Bloco 1
-        this.simBDIcustoMODireto = document.getElementById('sim-bdi-custo-mo-direto');
-        // ... mais elementos da Simulação BDI
-
-        // Abas de Relatório (Containers)
-        this.resumoContainer = document.getElementById('relatorio-resumo-container');
-        this.listasContainer = document.getElementById('relatorio-listas-container');
-        this.curvaABCContainer = document.getElementById('relatorio-curva-abc-container');
-        this.cronogramaContainer = document.getElementById('relatorio-cronograma-container');
-
-        // Gráficos (Canvas)
-        this.graficoPizzaCanvas = document.getElementById('graficoPizzaCustos');
-        this.graficoCurvaABCCanvas = document.getElementById('graficoCurvaABC');
-        this.graficoGanttCanvas = document.getElementById('graficoGanttEstimado');
-
-        // Botões Globais (se não gerenciados inteiramente por handlers.js e seus próprios módulos)
-        this.btnSalvarOrcamento = document.getElementById('btn-salvar-orcamento');
-        this.btnCarregarOrcamento = document.getElementById('btn-carregar-orcamento');
-        this.btnResetarAplicacao = document.getElementById('btn-resetar-aplicacao');
-
-        console.log("Elementos do DOM cacheados.");
-    },
-
-    setupTabNavigation() {
-        console.log("ui.setupTabNavigation()");
-        if (!this.tabs) return;
-        this.tabs.forEach(tab => {
-            tab.addEventListener('click', (event) => {
-                event.preventDefault();
-                const targetTabId = tab.getAttribute('data-tab'); // data-tab="configuracoes"
-                if (targetTabId) {
-                    this.showTab(targetTabId);
-                } else {
-                    console.warn("Atributo data-tab não encontrado no link da aba:", tab);
-                }
-            });
-        });
-    },
-
-    showTab(tabId, forceUpdate = false) {
-        console.log(`ui.showTab('${tabId}', forceUpdate: ${forceUpdate})`);
-        if (!this.tabContents || !this.tabs) {
-            console.error("showTab: Conteúdo das abas ou links das abas não cacheados.");
-            return;
-        }
-
-        let tabFound = false;
-        this.tabContents.forEach(content => {
-            if (content.id === tabId) {
-                content.classList.add('active');
-                tabFound = true;
-            } else {
-                content.classList.remove('active');
-            }
-        });
-
-        if (!tabFound) {
-            console.warn(`Conteúdo da aba com ID '${tabId}' não encontrado.`);
-            // Poderia tentar mostrar uma aba padrão se a solicitada não existir
-            // this.showTab(this.defaultTabId, true);
-            // return;
-        }
-
-        this.tabs.forEach(tabLink => {
-            if (tabLink.getAttribute('data-tab') === tabId) {
-                tabLink.classList.add('active');
-            } else {
-                tabLink.classList.remove('active');
-            }
-        });
-
-        this.activeTab = tabId;
-
-        // Atualizar conteúdo dinâmico (relatórios, gráficos) ao mudar de aba
-        // ou se for uma atualização forçada (inicialização)
-        if (forceUpdate || this.isDynamicTab(tabId)) {
-            this.updateDynamicDataDisplay(tabId);
-        }
-        updateReportVisibility(tabId); // De relatorios.js para mostrar/ocultar seções específicas
-    },
-
-    isDynamicTab(tabId) {
-        // Define quais abas precisam de atualização de dados ao serem exibidas
-        const dynamicTabs = ['resumo', 'listas', 'curva-abc', 'cronograma-estimado', 'calculadora', 'simulacoes-bdi']; // Adicione 'calculadora' e 'simulacoes-bdi' se elas buscam/recalculam algo ao serem mostradas
-        return dynamicTabs.some(dynamicTabPrefix => tabId.startsWith(dynamicTabPrefix) || tabId.startsWith('relatorio-'));
-    },
-    
-    initAllCharts() {
-        console.log("ui.initAllCharts()");
-        try {
-            if (this.graficoPizzaCanvas) initGraficoPizzaCustos(this.graficoPizzaCanvas);
-            else console.warn("Canvas para Gráfico de Pizza não encontrado.");
-
-            if (this.graficoCurvaABCCanvas) initGraficoCurvaABC(this.graficoCurvaABCCanvas);
-            else console.warn("Canvas para Gráfico Curva ABC não encontrado.");
-
-            if (this.graficoGanttCanvas) initGraficoGanttEstimado(this.graficoGanttCanvas);
-            else console.warn("Canvas para Gráfico de Gantt não encontrado.");
-        } catch (error) {
-            console.error("Erro ao inicializar gráficos:", error);
-        }
-    },
-
-    updateAllChartsUI() {
-        console.log("ui.updateAllChartsUI()");
-        try {
-            // As funções updateXXX devem buscar os dados mais recentes de data.js ou receber os dados.
-            // O prompt original sugere que elas são chamadas e internamente buscam os dados.
-            if (this.graficoPizzaCanvas && typeof updateGraficoPizzaCustos === 'function') updateGraficoPizzaCustos();
-            if (this.graficoCurvaABCCanvas && typeof updateGraficoCurvaABC === 'function') updateGraficoCurvaABC();
-            if (this.graficoGanttCanvas && typeof updateGraficoGanttEstimado === 'function') updateGraficoGanttEstimado();
-        } catch (error) {
-            console.error("Erro ao atualizar gráficos:", error);
-        }
-    },
-
-    // Chamado quando dados mudam e a UI inteira precisa ser potencialmente atualizada
-    refreshAll() {
-        console.log("ui.refreshAll() chamado");
-        // Atualizar os dados nos módulos que gerenciam os formulários/tabelas
-        configManager.populateForm();       // Popula formulário de configurações com dados atuais
-        calculadora.renderTable();          // Renderiza a tabela da calculadora com itens atuais
-        simBDI.updateAllBlocks();           // Atualiza todos os blocos de Simulação BDI
-
-        // Atualizar todas as partes dinâmicas (relatórios, gráficos)
-        this.updateDynamicDataDisplay(this.activeTab); // Atualiza com base na aba ativa
-        console.log("UI completamente atualizada.");
-    },
-
-    // Atualiza relatórios e gráficos. Pode ser chamado ao mudar de aba ou após alteração de dados.
-    updateDynamicDataDisplay(activeTabId = null) {
-        console.log(`ui.updateDynamicDataDisplay() para aba: ${activeTabId || 'todas as dinâmicas'}`);
-        // Atualizar todos os relatórios
-        // relatorios.js deve ter uma função que pega os dados de budgetDataStructure e configData
-        const configData = configManager.getConfigData(); // Pega as configurações atuais
-        // A função updateAllReports em relatorios.js deve usar budgetDataStructure e configData
-        if (typeof updateAllReports === 'function') {
-            updateAllReports(budgetDataStructure, configData);
-        }
-
-        // Atualizar todos os gráficos
-        this.updateAllChartsUI();
-
-        // Atualizar outras informações dinâmicas na UI
-        if (this.bdiAdotadoDisplayCalculadora) {
-            this.bdiAdotadoDisplayCalculadora.textContent = `${formatCurrency(configData.bdiFinal || 0, 2, false)}%`;
-        }
-        // ... outras atualizações de UI que dependem do estado global.
-    },
-
-    // Feedback visual (ex: para validação, salvar, carregar)
-    showGlobalMessage(message, type = 'info', duration = 3000) {
-        // Reutilizando a lógica de showAlert de utils.js se ela for adequada
-        // ou implementando uma barra de notificação global.
-        showAlert(message, type, duration); // de utils.js
-        console.log(`Mensagem Global (${type}): ${message}`);
-    },
-
-    displayValidationFeedback(element, message, isValid) {
-        // Remove feedback antigo
-        let feedbackElement = element.nextElementSibling;
-        if (feedbackElement && feedbackElement.classList.contains('validation-feedback')) {
-            feedbackElement.remove();
-        }
-        element.classList.remove('is-valid', 'is-invalid');
-
-        if (message) {
-            feedbackElement = document.createElement('div');
-            feedbackElement.classList.add('validation-feedback');
-            if (isValid) {
-                element.classList.add('is-valid');
-                feedbackElement.classList.add('valid-feedback'); // Para estilização CSS (ex: text-success)
-            } else {
-                element.classList.add('is-invalid');
-                feedbackElement.classList.add('invalid-feedback'); // Para estilização CSS (ex: text-danger)
-            }
-            feedbackElement.textContent = message;
-            // Insere depois do elemento, mas dentro do mesmo pai para melhor controle de layout
-            element.parentNode.insertBefore(feedbackElement, element.nextSibling);
-        }
-    },
-
-    clearValidationFeedback(formElement) {
-        formElement.querySelectorAll('.validation-feedback').forEach(el => el.remove());
-        formElement.querySelectorAll('.is-valid, .is-invalid').forEach(el => {
-            el.classList.remove('is-valid', 'is-invalid');
-        });
-    }
-
-    // Adicione mais métodos de UI conforme necessário (ex: exibir modais, spinners de carregamento)
+    clearAllErrorMessages() { document.querySelectorAll('.error-message').forEach(el => { el.textContent = ''; el.style.display = 'none'; }); document.querySelectorAll('.input-error').forEach(el => { el.classList.remove('input-error'); }); }
 };
-
-export default ui;
