@@ -1,58 +1,147 @@
 // js/ui.js
-// ... (Conteúdo completo do ui.js que forneci na Parte 3 de 3 (Final) dos JS - a versão mais recente)
-// Este arquivo já estava correto e completo.
-import { configManager } from './config.js';
-import { calculadora as calc } from './calculadora.js';
-import { simulacoesBDI as simBDI } from './simulacoesBDI.js';
-import { parseCurrency, formatCurrency, parsePercentage, formatPercentage, debounce, parseFloatStrict } from './utils.js';
-import { budgetDataStructure as baseListaServicos, getAreaObra, getBdiFinalAdotado, getLaborCosts, getMaterialPrices, getSimulationBdiValues, setSimulationBdiValues, simDefaultValues, resetMaterialPricesToDefault, laborCosts as initialLaborCosts, bdiFinalAdotado as initialBdiFinalAdotado, areaObra as initialAreaObra } from './data.js';
-import { persistencia } from './persistencia.js';
-import { handlers } from './handlers.js';
-import { resumoFinanceiro, listas as moduloListas, curvaABC, cronogramaEstimado } from './relatorios.js';
-import { initGraficoCurvaABC, renderizarGraficoCurvaABC, destroyChartCurvaABC } from './graficoCurvaABC.js';
-import { initGraficoPizzaCustos, renderizarGraficoPizzaCustos, destroyChartPizzaCustos } from './graficoPizzaCustos.js';
-import { initGraficoGantt, renderizarGraficoGantt, destroyChartGantt } from './graficoGantt.js';
+import { formatNumber, parseFloatStrict, formatCurrency } from './util.js';
+import { getBudgetData, getAreaObra } from './data.js'; 
 
-export const ui = {
-    currentTab: 'configuracoes', 
-    calculadora: calc, 
-    simulacoesBDI: simBDI, 
-    init() { this.setupTabNavigation(); this.populateServicosSelect(); this.setupEventListeners(); configManager.init(); calc.init(); simBDI.init(); initGraficoCurvaABC(); initGraficoPizzaCustos(); initGraficoGantt(); this.changeTab(this.currentTab, true); document.getElementById('currentYear').textContent = new Date().getFullYear(); },
-    setupTabNavigation() { const tabLinks = document.querySelectorAll('.tab-link'); tabLinks.forEach(link => { const tabContentId = link.dataset.tab; link.id = `tab-link-${tabContentId}`; link.addEventListener('click', () => this.changeTab(tabContentId)); link.setAttribute('role', 'tab'); link.setAttribute('aria-selected', 'false'); link.setAttribute('tabindex', '-1'); link.setAttribute('aria-controls', tabContentId); const tabContent = document.getElementById(tabContentId); if (tabContent) { tabContent.setAttribute('role', 'tabpanel'); tabContent.setAttribute('aria-labelledby', link.id); } }); const firstTabLink = document.querySelector(`.tab-link[data-tab="${this.currentTab}"]`); if (firstTabLink) { firstTabLink.classList.add('active'); firstTabLink.setAttribute('aria-selected', 'true'); firstTabLink.setAttribute('tabindex', '0'); const firstTabContent = document.getElementById(this.currentTab); if (firstTabContent) firstTabContent.classList.add('active'); } },
-    changeTab(tabId, isInitialLoad = false) { if (this.currentTab !== tabId || isInitialLoad) { if (this.currentTab === 'curva-abc' && typeof destroyChartCurvaABC === 'function') destroyChartCurvaABC(); if (this.currentTab === 'resumo' && typeof destroyChartPizzaCustos === 'function') destroyChartPizzaCustos(); if (this.currentTab === 'cronograma' && typeof destroyChartGantt === 'function') destroyChartGantt(); document.querySelectorAll('.tab-content.active').forEach(content => content.classList.remove('active')); document.querySelectorAll('.tab-link.active').forEach(link => { link.classList.remove('active'); link.setAttribute('aria-selected', 'false'); link.setAttribute('tabindex', '-1'); }); const activeTabLink = document.getElementById(`tab-link-${tabId}`); const activeTabContent = document.getElementById(tabId); if(activeTabLink) { activeTabLink.classList.add('active'); activeTabLink.setAttribute('aria-selected', 'true'); activeTabLink.setAttribute('tabindex', '0'); if (!isInitialLoad && document.activeElement !== activeTabLink) activeTabLink.focus(); } if(activeTabContent) activeTabContent.classList.add('active'); this.currentTab = tabId; } if (isInitialLoad) { this.updateAllTabs(); } else { this.updateCurrentTabContent(); } },
-    updateCurrentTabContent() { const itensParaRelatorio = calc.getItensComCustosCalculados(); const configParaResumo = { bdiFinal: getBdiFinalAdotado(), areaObra: getAreaObra() }; const totalCustoDireto = calc.getTotalCustoDireto(); const precoVendaTotal = totalCustoDireto * (1 + configParaResumo.bdiFinal / 100); const duracaoInput = document.getElementById('inputDuracaoEstimada'); const duracao = duracaoInput ? (parseInt(duracaoInput.value, 10) || 6) : 6; switch (this.currentTab) { case 'resumo': if (resumoFinanceiro && resumoFinanceiro.updateResumo) resumoFinanceiro.updateResumo(itensParaRelatorio, configParaResumo); if (typeof renderizarGraficoPizzaCustos === 'function') renderizarGraficoPizzaCustos(calc.getTotalCustoMaterial(), calc.getTotalCustoMO()); break; case 'listas': if (moduloListas && moduloListas.updateListaServicos) moduloListas.updateListaServicos(itensParaRelatorio); if (moduloListas && moduloListas.updateListaMateriais) moduloListas.updateListaMateriais(); break; case 'curva-abc': if (curvaABC && curvaABC.updateCurvaABC) { const dadosCurva = curvaABC.updateCurvaABC(itensParaRelatorio); if (typeof renderizarGraficoCurvaABC === 'function') renderizarGraficoCurvaABC(dadosCurva); } break; case 'cronograma': if (cronogramaEstimado && cronogramaEstimado.updateCronograma) cronogramaEstimado.updateCronograma(precoVendaTotal, duracao); if (typeof renderizarGraficoGantt === 'function') renderizarGraficoGantt(itensParaRelatorio, duracao, new Date()); break; case 'simulacoes-bdi': if (simBDI && simBDI.recalculateAllBlocks) simBDI.recalculateAllBlocks(); break; case 'configuracoes': if(configManager && configManager.loadConfigValuesToUI) configManager.loadConfigValuesToUI(); break; case 'calculadora': if(calc && calc.recalcularTodosOsCustos) calc.recalcularTodosOsCustos(); break; } },
-    updateAllTabs() { if(calc && calc.recalcularTodosOsCustos) calc.recalcularTodosOsCustos(); const itensParaRelatorio = calc.getItensComCustosCalculados(); const configParaResumo = { bdiFinal: getBdiFinalAdotado(), areaObra: getAreaObra() }; const totalCustoDireto = calc.getTotalCustoDireto(); const precoVendaTotal = totalCustoDireto * (1 + configParaResumo.bdiFinal / 100); const duracaoInput = document.getElementById('inputDuracaoEstimada'); const duracao = duracaoInput ? (parseInt(duracaoInput.value, 10) || 6) : 6; if (resumoFinanceiro && resumoFinanceiro.updateResumo) resumoFinanceiro.updateResumo(itensParaRelatorio, configParaResumo); if (moduloListas && moduloListas.updateListaServicos) moduloListas.updateListaServicos(itensParaRelatorio); if (moduloListas && moduloListas.updateListaMateriais) moduloListas.updateListaMateriais(); if (curvaABC && curvaABC.updateCurvaABC) { const dadosCurva = curvaABC.updateCurvaABC(itensParaRelatorio); if (this.currentTab === 'curva-abc' && typeof renderizarGraficoCurvaABC === 'function') renderizarGraficoCurvaABC(dadosCurva); else if (typeof destroyChartCurvaABC === 'function') destroyChartCurvaABC(); } if (cronogramaEstimado && cronogramaEstimado.updateCronograma) cronogramaEstimado.updateCronograma(precoVendaTotal, duracao); if (simBDI && simBDI.recalculateAllBlocks) simBDI.recalculateAllBlocks(); if (this.currentTab === 'resumo' && typeof renderizarGraficoPizzaCustos === 'function') renderizarGraficoPizzaCustos(calc.getTotalCustoMaterial(), calc.getTotalCustoMO()); else if (typeof destroyChartPizzaCustos === 'function') destroyChartPizzaCustos(); if (this.currentTab === 'cronograma' && typeof renderizarGraficoGantt === 'function') renderizarGraficoGantt(itensParaRelatorio, duracao, new Date()); else if (typeof destroyChartGantt === 'function') destroyChartGantt(); if (configManager && configManager.loadConfigValuesToUI) configManager.loadConfigValuesToUI(); },
-    populateServicosSelect() { const select = document.getElementById('selectServico'); if (!select) return; while (select.options.length > 1) select.remove(1); baseListaServicos.forEach(servico => { const option = document.createElement('option'); option.value = servico.refComposition; option.textContent = servico.description; select.appendChild(option); }); },
-    showInputError(inputElement, message) { if (!inputElement) return; const errorElementId = inputElement.id + 'Error'; const errorElement = document.getElementById(errorElementId); inputElement.classList.add('input-error'); if (errorElement) { errorElement.textContent = message; errorElement.style.display = 'block'; } },
-    clearInputError(inputElement) { if (!inputElement) return; const errorElementId = inputElement.id + 'Error'; const errorElement = document.getElementById(errorElementId); inputElement.classList.remove('input-error'); if (errorElement) { errorElement.textContent = ''; errorElement.style.display = 'none'; } },
-    formatCurrencyInputOnBlur(event) { const input = event.target; this.clearInputError(input); let value = parseCurrency(input.value); let isValid = true; if (isNaN(value)) { this.showInputError(input, 'Valor inválido.'); value = 0; isValid = false; } else if (value < 0) { this.showInputError(input, 'Não pode ser negativo.'); value = 0; isValid = false; } input.value = formatCurrency(value); return { value, isValid }; },
-    formatPercentageInputOnBlur(event, min = 0, max = 100) { const input = event.target; this.clearInputError(input); let value = parsePercentage(input.value); let isValid = true; if (isNaN(value)) { this.showInputError(input, 'Valor inválido.'); value = min; isValid = false; } else if (value < min) { this.showInputError(input, `Mínimo ${min}%.`); value = min; isValid = false; } else if (value > max) { this.showInputError(input, `Máximo ${max}%.`); value = max; isValid = false; } input.value = formatPercentage(value); return { value, isValid }; },
-    setupEventListeners() { document.getElementById('btnSalvarOrcamento').addEventListener('click', () => persistencia.saveBudget()); document.getElementById('inputCarregarOrcamento').addEventListener('change', (event) => persistencia.loadBudget(event)); document.getElementById('btnResetarAplicacao').addEventListener('click', handlers.handleResetApplication); document.getElementById('btnAdicionarServico').addEventListener('click', handlers.handleAddServico); const inputPesqServ = document.getElementById('inputPesquisaServico'); if (inputPesqServ) inputPesqServ.addEventListener('input', debounce(handlers.handleSearch, 300)); const inputDuracaoEst = document.getElementById('inputDuracaoEstimada'); if (inputDuracaoEst) { inputDuracaoEst.addEventListener('blur', () => { this.clearInputError(inputDuracaoEst); let duracao = parseInt(inputDuracaoEst.value, 10); if (isNaN(duracao) || duracao < 1) { this.showInputError(inputDuracaoEst, "Duração deve ser no mínimo 1 mês."); duracao = parseInt(inputDuracaoEst.min) || 1; } inputDuracaoEst.value = duracao; this.updateAllTabs(); }); inputDuracaoEst.addEventListener('focus', () => this.clearInputError(inputDuracaoEst)); } const inputArea = document.getElementById('inputAreaObra'); if (inputArea) { inputArea.addEventListener('blur', (event) => { const input = event.target; this.clearInputError(input); let valueStr = input.value.replace(" m²", "").replace(/[^0-9]/g, ''); let value = parseInt(valueStr, 10); if (isNaN(value) || value < 1) { this.showInputError(input, 'Área inválida. Mínimo 1 m² e deve ser inteiro.'); value = getAreaObra(); if (value < 1 || !Number.isInteger(value)) value = 1; } const intValue = value; input.value = `${intValue} m²`; setAreaObra(intValue); this.updateAllTabs(); }); inputArea.addEventListener('focus', () => this.clearInputError(inputArea)); } },
-    resetUI() { 
-        // Resetar os valores em data.js para os padrões
-        Object.keys(initialLaborCosts).forEach(key => updateLaborCost(key, initialLaborCosts[key]));
-        resetMaterialPricesToDefault(); // Usa a função de data.js
-        setBdiFinalAdotado(initialBdiFinalAdotado);
-        setAreaObra(initialAreaObra);
-        setSimulationBdiValues(simDefaultValues); // Reseta valores da simulação em data.js
+export function openTab(tabName) {
+    document.querySelectorAll(".tab-content").forEach(tc => {
+        tc.style.display = "none";
+        tc.setAttribute('aria-hidden', 'true');
+        tc.setAttribute('tabindex', '-1');
+    });
+    document.querySelectorAll(".tab-buttons button").forEach(btn => {
+        btn.classList.remove("active");
+        btn.setAttribute('aria-selected', 'false');
+        btn.setAttribute('tabindex', '-1');
+    });
 
-        // Atualizar a UI de config e simBDI para refletir os valores resetados
-        if(configManager && configManager.loadConfigValuesToUI) configManager.loadConfigValuesToUI();
-        if(simBDI && simBDI.loadValuesFromData) simBDI.loadValuesFromData(); // Puxa de data.js
+    const tabToOpen = document.getElementById(tabName);
+    const buttonToActivate = document.querySelector(`.tab-buttons button[data-tab='${tabName}']`);
+    
+    if (tabToOpen) {
+        tabToOpen.style.display = "block";
+        tabToOpen.setAttribute('aria-hidden', 'false');
+        tabToOpen.setAttribute('tabindex', '0'); 
+    }
+    if (buttonToActivate) {
+        buttonToActivate.classList.add("active");
+        buttonToActivate.setAttribute('aria-selected', 'true');
+        buttonToActivate.setAttribute('tabindex', '0');
+    }
+}
+
+export function populateCategoryFilter(filterCallback) { 
+    const budgetDataItems = getBudgetData();
+    const categories = new Set(budgetDataItems.map(item => item.categoria));
+    const categoryFilter = document.getElementById('category-filter');
+    if (!categoryFilter) {
+        console.error("Elemento 'category-filter' não encontrado.");
+        return;
+    }
+
+    const firstOption = categoryFilter.options[0]; 
+    categoryFilter.innerHTML = ''; 
+    categoryFilter.appendChild(firstOption); 
+    firstOption.selected = true; 
+
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+    });
+
+    if (categoryFilter._filterCallback) {
+        categoryFilter.removeEventListener('change', categoryFilter._filterCallback);
+    }
+    categoryFilter._filterCallback = filterCallback; 
+    categoryFilter.addEventListener('change', filterCallback);
+}
+
+
+export function toggleModoCotação(mainBudgetTable, labelTotalCusto) {
+    if (!mainBudgetTable || !labelTotalCusto) {
+        console.error("Elementos da tabela principal ou label de total não encontrados para toggleModoCotação.");
+        return;
+    }
+    mainBudgetTable.classList.toggle('modo-cotacao-ativo');
+    if (mainBudgetTable.classList.contains('modo-cotacao-ativo')) {
+        labelTotalCusto.colSpan = 4; 
+    } else {
+        labelTotalCusto.colSpan = 7; 
+    }
+}
+
+export function applySearchAndCategoryFilter(searchInput, categoryFilterSelect, budgetItemsTableBody) {
+    if (!searchInput || !categoryFilterSelect || !budgetItemsTableBody) {
+        return;
+    }
+    const terms = searchInput.value.toLowerCase().split(' ').filter(t => t.length > 0);
+    const selectedCategory = categoryFilterSelect.value;
+
+    budgetItemsTableBody.querySelectorAll('tr').forEach(row => {
+        const desc = row.cells && row.cells[0] ? row.cells[0].textContent.toLowerCase() : "";
+        const ref = row.cells && row.cells[1] ? row.cells[1].textContent.toLowerCase() : "";
         
-        calc.resetCalculadora(); 
+        const categoryMatch = selectedCategory === 'all' || row.dataset.category === selectedCategory;
         
-        const inputPesquisa = document.getElementById('inputPesquisaServico'); if(inputPesquisa) inputPesquisa.value = ''; 
-        const selectServ = document.getElementById('selectServico'); if(selectServ) selectServ.value = ''; 
-        const inputDuracao = document.getElementById('inputDuracaoEstimada'); if(inputDuracao) { inputDuracao.value = 6; if (this.clearInputError) this.clearInputError(inputDuracao); } 
+        let searchMatch = true;
+        if (terms.length > 0) {
+            searchMatch = terms.every(term => desc.includes(term) || ref.includes(term));
+        }
         
-        this.clearAllErrorMessages(); 
+        row.style.display = categoryMatch && searchMatch ? '' : 'none';
+    });
+}
+
+export function updateSummaryIndicators(
+    grandTotalCostCell, grandTotalSellPriceCell, 
+    grandTotalHHProfCell, grandTotalHHHelperCell
+) {
+    const indicatorCostM2 = document.getElementById('indicator-cost-m2');
+    const indicatorSellPriceM2 = document.getElementById('indicator-sell-price-m2');
+    const indicatorCostHh = document.getElementById('indicator-cost-hh');
+    const indicatorSellPriceHh = document.getElementById('indicator-sell-price-hh');
+
+    const areaObraValue = getAreaObra(); 
+
+    const custoTotalDireto = grandTotalCostCell ? parseFloatStrict(grandTotalCostCell.textContent) : 0;
+    const pvTotal = grandTotalSellPriceCell ? parseFloatStrict(grandTotalSellPriceCell.textContent) : 0;
+    const totHHProf = grandTotalHHProfCell ? parseFloatStrict(grandTotalHHProfCell.textContent) : 0;
+    const totHHHelper = grandTotalHHHelperCell ? parseFloatStrict(grandTotalHHHelperCell.textContent) : 0;
+    const hhTotalGlobal = totHHProf + totHHHelper;
+
+    if(indicatorCostM2) indicatorCostM2.textContent = areaObraValue > 0 ? formatCurrency(custoTotalDireto / areaObraValue) : 'N/A';
+    if(indicatorSellPriceM2) indicatorSellPriceM2.textContent = areaObraValue > 0 ? formatCurrency(pvTotal / areaObraValue) : 'N/A';
+    if(indicatorCostHh) indicatorCostHh.textContent = hhTotalGlobal > 0 ? formatCurrency(custoTotalDireto / hhTotalGlobal) : 'N/A';
+    if(indicatorSellPriceHh) indicatorSellPriceHh.textContent = hhTotalGlobal > 0 ? formatCurrency(pvTotal / hhTotalGlobal) : 'N/A';
+}
+
+export function setupTabButtonsAria() {
+    const tabButtons = document.querySelectorAll('.tab-buttons button');
+    let firstActiveButton = null;
+
+    tabButtons.forEach((button, index) => {
+        button.id = button.id || `tab-btn-auto-${index}`; 
+        const isActive = button.classList.contains('active');
+        button.setAttribute('role', 'tab');
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        button.setAttribute('aria-controls', button.dataset.tab);
+        button.setAttribute('tabindex', isActive ? '0' : '-1');
         
-        if (this.currentTab !== 'configuracoes') {
-            this.changeTab('configuracoes', true); 
-        } else {
-            this.updateAllTabs(); 
-        } 
-    },
-    clearAllErrorMessages() { document.querySelectorAll('.error-message').forEach(el => { el.textContent = ''; el.style.display = 'none'; }); document.querySelectorAll('.input-error').forEach(el => { el.classList.remove('input-error'); }); }
-};
+        if (isActive && !firstActiveButton) {
+            firstActiveButton = button;
+        }
+        
+        const tabPanel = document.getElementById(button.dataset.tab);
+        if (tabPanel) {
+            tabPanel.setAttribute('role', 'tabpanel');
+            tabPanel.setAttribute('aria-labelledby', button.id);
+            tabPanel.setAttribute('aria-hidden', !isActive ? 'true' : 'false');
+            tabPanel.setAttribute('tabindex', !isActive ? '-1' : '0');
+        }
+    });
+
+    if (!firstActiveButton && tabButtons.length > 0) {
+        tabButtons[0].setAttribute('tabindex', '0');
+    }
+}

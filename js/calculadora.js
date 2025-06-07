@@ -1,305 +1,224 @@
 // js/calculadora.js
-import { formatCurrency, parseFloatStrict } from './utils.js';
-import { ui } from './ui.js'; // Será definido depois, mas a estrutura modular prevê
-import {
-    getMaterialPrices, getLaborCosts,
-    budgetDataStructure, 
-    updateBudgetItemQuantity,
-    getBdiFinalAdotado 
+import { formatCurrency, formatNumber, parseFloatStrict, validateNumberInput } from './util.js';
+import { 
+    updateBudgetItemQuantity, getBudgetData, getBdiFinalAdotado,
+    getLaborCosts, getMaterialPrices, getMateriaisBase 
 } from './data.js';
 
-export const calculadora = {
-    itensAtivosNaTabela: [], 
+let recalculateAllSimulationsCallback; 
+let populateCategoryFilterCallback; 
+let applySearchAndCategoryFilterCallback; 
 
-    init() { 
-        this.renderizarItens(); 
-        this.updateBdiAdotadoDisplay();
-    },
+export function setCalcCallbacks(simFunc, catFilterFunc, searchFilterFunc) {
+    recalculateAllSimulationsCallback = simFunc;
+    populateCategoryFilterCallback = catFilterFunc;
+    applySearchAndCategoryFilterCallback = searchFilterFunc;
+}
 
-    updateBdiAdotadoDisplay() {
-        const bdiDisplayElement = document.getElementById('bdiAdotadoDisplayCalculadora');
-        if (bdiDisplayElement) {
-            bdiDisplayElement.textContent = formatPercentage(getBdiFinalAdotado());
+let budgetItemsTableBody;
+let grandTotalMaterialCell, grandTotalLaborCell, grandTotalCostCell, grandTotalSellPriceCell;
+let grandTotalHHProfCell, grandTotalHHHelperCell, grandTotalWeightCell;
+
+export function initializeCalculadoraDOM(elements) {
+    budgetItemsTableBody = elements.budgetItemsTableBody;
+    grandTotalMaterialCell = elements.grandTotalMaterialCell;
+    grandTotalLaborCell = elements.grandTotalLaborCell;
+    grandTotalCostCell = elements.grandTotalCostCell;
+    grandTotalSellPriceCell = elements.grandTotalSellPriceCell;
+    grandTotalHHProfCell = elements.grandTotalHHProfCell;
+    grandTotalHHHelperCell = elements.grandTotalHHHelperCell;
+    grandTotalWeightCell = elements.grandTotalWeightCell;
+}
+
+function calculateItemUnitLaborCost(item) {
+    let cost = 0;
+    const currentLaborCosts = getLaborCosts();
+    if (item.professionals) {
+        for (const profType in item.professionals) {
+            cost += (item.professionals[profType] || 0) * (currentLaborCosts[profType] || 0);
         }
-    },
-
-    adicionarItem(refCompositionId) {
-        const itemIndex = budgetDataStructure.findIndex(item => item.refComposition === refCompositionId);
-        if (itemIndex === -1) { console.error("Composição base não encontrada:", refCompositionId); return; }
-        
-        const itemJaExiste = this.itensAtivosNaTabela.find(item => item.refComposition === refCompositionId);
-        if (itemJaExiste || budgetDataStructure[itemIndex].initialQuantity > 0) {
-            const inputExistente = document.getElementById(`quantidade-${budgetDataStructure[itemIndex].refComposition}`);
-            if (inputExistente) {
-                inputExistente.focus();
-                alert(`A composição "${budgetDataStructure[itemIndex].description}" já está na lista. Você pode alterar a quantidade diretamente na tabela.`);
-            }
-            return; 
-        }
-        updateBudgetItemQuantity(itemIndex, 1); 
-        this.renderizarItens();
-        if (ui && ui.updateAllTabs) ui.updateAllTabs(); else console.warn("ui.updateAllTabs não disponível em calculadora.adicionarItem");
-    },
-
-    removerItem(refCompositionId) {
-        const itemIndex = budgetDataStructure.findIndex(item => item.refComposition === refCompositionId);
-        if (itemIndex !== -1) updateBudgetItemQuantity(itemIndex, 0);
-        this.renderizarItens();
-        if (ui && ui.updateAllTabs) ui.updateAllTabs(); else console.warn("ui.updateAllTabs não disponível em calculadora.removerItem");
-    },
-
-    atualizarQuantidade(refCompositionId, novaQuantidadeStr) {
-        const itemIndex = budgetDataStructure.findIndex(item => item.refComposition === refCompositionId);
-        const inputQuantidade = document.getElementById(`quantidade-${refCompositionId}`);
-        if (itemIndex !== -1 && inputQuantidade) {
-            if (ui && ui.clearInputError) ui.clearInputError(inputQuantidade); else console.warn("ui.clearInputError não disponível");
-            let novaQuantidade = parseFloatStrict(String(novaQuantidadeStr).replace(',', '.'));
-            if (isNaN(novaQuantidade)) {
-                if (ui && ui.showInputError) ui.showInputError(inputQuantidade, 'Quantidade inválida.');
-                inputQuantidade.value = parseFloatStrict(budgetDataStructure[itemIndex].initialQuantity).toFixed(2).replace('.', ',');
-                return; 
-            } else if (novaQuantidade < 0) {
-                if (ui && ui.showInputError) ui.showInputError(inputQuantidade, 'Não pode ser negativa.');
-                novaQuantidade = 0;
-            }
-            updateBudgetItemQuantity(itemIndex, novaQuantidade);
-            this.renderizarItens(); 
-            if (ui && ui.updateAllTabs) ui.updateAllTabs(); else console.warn("ui.updateAllTabs não disponível em calculadora.atualizarQuantidade");
-        }
-    },
-    
-    calcularCustosComposicao(composicaoItem) {
-        const materialPrices = getMaterialPrices();
-        const laborCosts = getLaborCosts();
-        let custoMaterialUnitario = 0;
-        let custoMaoDeObraUnitario = 0;
-
-        if (composicaoItem.detailedMaterials && Array.isArray(composicaoItem.detailedMaterials)) {
-            composicaoItem.detailedMaterials.forEach(matDetalhe => {
-                const precoUnit = materialPrices[matDetalhe.idMaterial];
-                if (precoUnit !== undefined && matDetalhe.consumptionPerUnit !== undefined) {
-                    const consumoComPerda = matDetalhe.consumptionPerUnit * (1 + (matDetalhe.lossPercent || 0) / 100);
-                    custoMaterialUnitario += consumoComPerda * precoUnit;
-                }
-            });
-        }
-        if (composicaoItem.professionals) {
-            for (const profKey in composicaoItem.professionals) {
-                const horas = composicaoItem.professionals[profKey];
-                const custoDia = laborCosts[profKey] || 0;
-                const custoHora = custoDia / 8; // Assume 8h/dia
-                custoMaoDeObraUnitario += horas * custoHora;
-            }
-        }
-        if (composicaoItem.helpers) {
-            for (const helperKey in composicaoItem.helpers) {
-                const horas = composicaoItem.helpers[helperKey];
-                const custoDia = laborCosts[helperKey] || 0;
-                const custoHora = custoDia / 8; 
-                custoMaoDeObraUnitario += horas * custoHora;
-            }
-        }
-        const custoUnitTotal = custoMaterialUnitario + custoMaoDeObraUnitario;
-        return { custoMaterialUnitario, custoMaoDeObraUnitario, custoUnitarioTotal: custoUnitTotal };
-    },
-
-    recalcularTodosOsCustos() { 
-        this.renderizarItens(); 
-        this.updateBdiAdotadoDisplay(); 
-    },
-
-    renderizarItens(filtro = '') {
-        const tbody = document.getElementById('tabelaCalculadoraItens');
-        if (!tbody) return;
-        tbody.innerHTML = ''; 
-        this.itensAtivosNaTabela = [];
-        
-        const bdiAdotadoPercent = getBdiFinalAdotado();
-        const bdiMultiplicador = 1 + (bdiAdotadoPercent / 100);
-
-        const itensParaRenderizar = budgetDataStructure.filter(item => 
-            item.initialQuantity > 0 &&
-            item.description.toLowerCase().includes(filtro.toLowerCase())
-        );
-
-        if (itensParaRenderizar.length === 0) {
-            const isFiltering = filtro !== '';
-            const tr = tbody.insertRow();
-            const td = tr.insertCell();
-            td.colSpan = 15; 
-            td.textContent = isFiltering ? 'Nenhuma composição encontrada com o filtro.' : 'Nenhuma composição adicionada à calculadora.';
-            td.style.textAlign = 'center';
-        } else {
-            itensParaRenderizar.forEach(itemBase => {
-                const { custoMaterialUnitario, custoMaoDeObraUnitario, custoUnitarioTotal } = this.calcularCustosComposicao(itemBase);
-                const quantidade = parseFloatStrict(itemBase.initialQuantity); 
-                const custoMatTotalItem = custoMaterialUnitario * quantidade;
-                const custoMOTotalItem = custoMaoDeObraUnitario * quantidade;
-                const custoItemTotalDireto = custoUnitarioTotal * quantidade;
-                const precoVendaItem = custoItemTotalDireto * bdiMultiplicador;
-                
-                let hhProfTotalItem = 0;
-                if (itemBase.professionals) { for (const profKey in itemBase.professionals) { hhProfTotalItem += (itemBase.professionals[profKey] || 0) * quantidade; } } 
-                else if (itemBase.unitHHProfessional) { hhProfTotalItem = (itemBase.unitHHProfessional || 0) * quantidade; }
-
-                let hhAjudTotalItem = 0;
-                if (itemBase.helpers) { for (const helperKey in itemBase.helpers) { hhAjudTotalItem += (itemBase.helpers[helperKey] || 0) * quantidade; } } 
-                else if (itemBase.unitHHelper) { hhAjudTotalItem = (itemBase.unitHHelper || 0) * quantidade; }
-                
-                const pesoTotalItem = (itemBase.unitWeight || 0) * quantidade;
-
-                this.itensAtivosNaTabela.push({ 
-                    ...itemBase, 
-                    quantidade: quantidade, 
-                    custoMaterialUnitarioCalc: custoMaterialUnitario,
-                    custoMOUUnitarioCalc: custoMaoDeObraUnitario,
-                    custoUnitarioTotalCalc: custoUnitarioTotal,
-                    custoMatTotalItemCalc: custoMatTotalItem,
-                    custoMOTotalItemCalc: custoMOTotalItem,
-                    custoItemTotalDiretoCalc: custoItemTotalDireto,
-                    precoVendaItemCalc: precoVendaItem,
-                    hhProfTotalItemCalc: hhProfTotalItem,
-                    hhAjudTotalItemCalc: hhAjudTotalItem,
-                    pesoTotalItemCalc: pesoTotalItem
-                });
-
-                const tr = tbody.insertRow();
-                tr.setAttribute('data-id', itemBase.refComposition); 
-                tr.insertCell().textContent = itemBase.description;
-                tr.insertCell().textContent = itemBase.refComposition;
-                tr.insertCell().textContent = itemBase.unit;
-                
-                const tdQuantidade = tr.insertCell();
-                const inputQuantidade = document.createElement('input');
-                inputQuantidade.type = 'text'; 
-                inputQuantidade.value = quantidade.toFixed(2).replace('.', ','); 
-                inputQuantidade.classList.add('input-quantidade');
-                inputQuantidade.id = `quantidade-${itemBase.refComposition}`;
-                const errorSpanQuantidade = document.createElement('span');
-                errorSpanQuantidade.classList.add('error-message');
-                errorSpanQuantidade.id = `quantidade-${itemBase.refComposition}Error`;
-                tdQuantidade.appendChild(inputQuantidade);
-                tdQuantidade.appendChild(errorSpanQuantidade); 
-                inputQuantidade.addEventListener('blur', (event) => { this.atualizarQuantidade(itemBase.refComposition, event.target.value); });
-                inputQuantidade.addEventListener('focus', () => { if (ui && ui.clearInputError) ui.clearInputError(inputQuantidade); else console.warn("ui.clearInputError não disponível")}); 
-                
-                tr.insertCell().textContent = formatCurrency(custoMaterialUnitario);
-                tr.insertCell().textContent = formatCurrency(custoMaoDeObraUnitario);
-                tr.insertCell().textContent = formatCurrency(custoUnitarioTotal);
-                tr.insertCell().textContent = formatCurrency(custoMatTotalItem);
-                tr.insertCell().textContent = formatCurrency(custoMOTotalItem);
-                tr.insertCell().textContent = formatCurrency(custoItemTotalDireto);
-                tr.insertCell().textContent = formatCurrency(precoVendaItem);
-                tr.insertCell().textContent = hhProfTotalItem.toFixed(2).replace('.',',');
-                tr.insertCell().textContent = hhAjudTotalItem.toFixed(2).replace('.',',');
-                tr.insertCell().textContent = pesoTotalItem.toFixed(2).replace('.',',');
-
-                const tdControles = tr.insertCell();
-                const btnRemover = document.createElement('button');
-                btnRemover.textContent = 'Excluir';
-                btnRemover.classList.add('btn-remover');
-                btnRemover.setAttribute('aria-label', `Excluir item ${itemBase.description}`);
-                btnRemover.addEventListener('click', () => this.removerItem(itemBase.refComposition));
-                tdControles.appendChild(btnRemover);
-            });
-        }
-        this.atualizarTotalTabela();
-        this.updateBdiAdotadoDisplay();
-    },
-
-    atualizarTotalTabela() {
-        const rodapeContainer = document.getElementById('tabelaCalculadoraRodape');
-        if (!rodapeContainer) return;
-        rodapeContainer.innerHTML = ''; 
-
-        const totalMat = this.itensAtivosNaTabela.reduce((acc, item) => acc + item.custoMatTotalItemCalc, 0);
-        const totalMO = this.itensAtivosNaTabela.reduce((acc, item) => acc + item.custoMOTotalItemCalc, 0);
-        const totalDireto = this.itensAtivosNaTabela.reduce((acc, item) => acc + item.custoItemTotalDiretoCalc, 0);
-        const totalVenda = this.itensAtivosNaTabela.reduce((acc, item) => acc + item.precoVendaItemCalc, 0);
-        const totalHHProf = this.itensAtivosNaTabela.reduce((acc, item) => acc + item.hhProfTotalItemCalc, 0);
-        const totalHHAjud = this.itensAtivosNaTabela.reduce((acc, item) => acc + item.hhAjudTotalItemCalc, 0);
-        const totalPeso = this.itensAtivosNaTabela.reduce((acc, item) => acc + item.pesoTotalItemCalc, 0);
-
-        const trTitulo = rodapeContainer.insertRow();
-        const tdTitulo = trTitulo.insertCell();
-        // Colspan para alinhar o texto "TOTAIS:" antes das colunas de valores.
-        // Número de colunas antes dos totais: Item, Ref, UM, Qtde, CustoMatUnit, CustoMOUnit, CustoUnitTotal = 7
-        tdTitulo.colSpan = 7; 
-        tdTitulo.textContent = "TOTAIS CUSTO DIRETO:";
-        // As células restantes nesta linha do título podem ser deixadas vazias ou preenchidas se necessário
-        for(let i = 0; i < (14 - 7) ; i++) { // 14 colunas totais na tabela - 7 da colspan = 7 células restantes
-            trTitulo.insertCell();
-        }
-
-
-        const trValores = rodapeContainer.insertRow();
-        // Adiciona células vazias para alinhar com as colunas da tabela antes dos totais
-        for(let i = 0; i < 7; i++) trValores.insertCell(); 
-        
-        const criarCelulaTotal = (valor, label, isCurrency = true) => {
-            const td = trValores.insertCell();
-            td.classList.add('total-value');
-            // O valor e o label ficam na mesma célula, com o label abaixo
-            const valorFormatado = isCurrency ? formatCurrency(valor) : parseFloatStrict(valor).toFixed(2).replace('.',',');
-            td.innerHTML = `${valorFormatado}<br><span style="font-size:0.8em; color:var(--secondary-color); font-weight:normal;">(${label})</span>`;
-            td.style.textAlign = "right"; // Garante alinhamento à direita para os totais
-            return td;
-        };
-
-        criarCelulaTotal(totalMat, "Total Mat.");
-        criarCelulaTotal(totalMO, "Total M.O.");
-        criarCelulaTotal(totalDireto, "Total C. Direto");
-        criarCelulaTotal(totalVenda, "Total Venda");
-        criarCelulaTotal(totalHHProf, "Total HH Prof.", false);
-        criarCelulaTotal(totalHHAjud, "Total HH Ajud.", false);
-        criarCelulaTotal(totalPeso, "Total Peso (kg)", false);
-        trValores.insertCell(); // Célula vazia para a coluna "Ações"
-    },
-    
-    setItens(loadedCompositions) { 
-        budgetDataStructure.forEach((item, index) => updateBudgetItemQuantity(index, 0));
-        if (loadedCompositions && Array.isArray(loadedCompositions)) {
-            loadedCompositions.forEach(loadedItem => {
-                const itemIndex = budgetDataStructure.findIndex(bsItem => bsItem.refComposition === loadedItem.refComposition);
-                if (itemIndex !== -1) {
-                    updateBudgetItemQuantity(itemIndex, loadedItem.quantity || 0);
-                }
-            });
-        }
-        this.recalcularTodosOsCustos();
-    },
-
-    getItensParaSalvar() {
-        return budgetDataStructure
-            .filter(item => item.initialQuantity > 0)
-            .map(item => ({ refComposition: item.refComposition, quantity: item.initialQuantity }));
-    },
-
-    getItensComCustosCalculados() { 
-        return this.itensAtivosNaTabela.map(item => ({ 
-            nome: item.description, 
-            unidade: item.unit, 
-            ref: item.refComposition, 
-            quantidade: item.quantidade,
-            custoUnitarioMaterial: item.custoMaterialUnitarioCalc, 
-            custoUnitarioMO: item.custoMOUUnitarioCalc,
-            custoUnitarioTotal: item.custoUnitarioTotalCalc, 
-            custoTotal: item.custoItemTotalDiretoCalc, 
-            precoVendaItem: item.precoVendaItemCalc, 
-            hhProfTotal: item.hhProfTotalItemCalc,
-            hhAjudTotal: item.hhAjudTotalItemCalc, 
-            pesoTotal: item.pesoTotalItemCalc,
-            categoria: item.categoria, 
-            // Não precisa passar detailedMaterials, professionals, helpers aqui, a menos que relatorios.js precise deles crus.
-            // A lógica de cálculo já os usou.
-        }));
-    },
-
-    getTotalCustoDireto() { return this.itensAtivosNaTabela.reduce((acc, item) => acc + item.custoItemTotalDiretoCalc, 0); },
-    getTotalCustoMaterial() { return this.itensAtivosNaTabela.reduce((acc, item) => acc + item.custoMatTotalItemCalc, 0); },
-    getTotalCustoMO() { return this.itensAtivosNaTabela.reduce((acc, item) => acc + item.custoMOTotalItemCalc, 0); },
-    resetCalculadora() { 
-        budgetDataStructure.forEach((item, index) => updateBudgetItemQuantity(index, 0));
-        this.renderizarItens(); 
     }
-};
+    if (item.helpers) {
+        for (const helperType in item.helpers) {
+            cost += (item.helpers[helperType] || 0) * (currentLaborCosts[helperType] || 0);
+        }
+    }
+    return cost;
+}
+
+function calculateItemUnitMaterialCost(item) {
+    let totalMaterialCost = 0;
+    const currentMaterialPrices = getMaterialPrices();
+    const currentMateriaisBase = getMateriaisBase();
+    if (item.detailedMaterials) {
+        item.detailedMaterials.forEach(matDetail => {
+            const materialBase = currentMateriaisBase[matDetail.idMaterial];
+            if (!materialBase) {
+                console.warn(`Material base ID '${matDetail.idMaterial}' não encontrado para '${item.description}'.`);
+                return;
+            }
+            const price = currentMaterialPrices[matDetail.idMaterial] !== undefined ? currentMaterialPrices[matDetail.idMaterial] : materialBase.precoUnitarioDefault;
+            const costWithLoss = matDetail.consumptionPerUnit * price * (1 + (matDetail.lossPercent / 100));
+            totalMaterialCost += costWithLoss;
+        });
+    }
+    return totalMaterialCost;
+}
+
+function calculateSingleRow(index) {
+    const budgetDataItems = getBudgetData(); 
+    if (!budgetDataItems[index] || !budgetItemsTableBody) return;
+
+    const item = budgetDataItems[index];
+    const qty = item.initialQuantity;
+
+    item.unitCostMaterial = calculateItemUnitMaterialCost(item);
+    item.unitCostLabor = calculateItemUnitLaborCost(item);
+    const custoItemTotalUnit = item.unitCostMaterial + item.unitCostLabor;
+
+    const unitMatCostEl = document.getElementById(`unit-material-cost-${index}`);
+    const unitLabCostEl = document.getElementById(`unit-labor-cost-${index}`);
+    const unitTotCostEl = document.getElementById(`unit-total-cost-${index}`);
+    if(unitMatCostEl) unitMatCostEl.textContent = formatCurrency(item.unitCostMaterial);
+    if(unitLabCostEl) unitLabCostEl.textContent = formatCurrency(item.unitCostLabor);
+    if(unitTotCostEl) unitTotCostEl.textContent = formatCurrency(custoItemTotalUnit);
+
+    const itemTotalMaterial = qty * (item.unitCostMaterial || 0);
+    const itemTotalLabor = qty * (item.unitCostLabor || 0);
+    const itemTotalCost = itemTotalMaterial + itemTotalLabor;
+
+    let itemTotalHHProf = 0, itemTotalHHHelper = 0;
+    if (item.professionals) for (const p in item.professionals) itemTotalHHProf += (item.professionals[p] || 0) * qty;
+    if (item.helpers) for (const h in item.helpers) itemTotalHHHelper += (item.helpers[h] || 0) * qty;
+    
+    const itemTotalWeight = qty * (item.unitWeight || 0);
+    const currentBdiFinalAdotado = getBdiFinalAdotado();
+    const itemSellPrice = itemTotalCost * (1 + (currentBdiFinalAdotado / 100));
+
+    if(document.getElementById(`item-total-material-${index}`)) document.getElementById(`item-total-material-${index}`).textContent = formatCurrency(itemTotalMaterial);
+    if(document.getElementById(`item-total-labor-${index}`)) document.getElementById(`item-total-labor-${index}`).textContent = formatCurrency(itemTotalLabor);
+    if(document.getElementById(`item-total-cost-${index}`)) document.getElementById(`item-total-cost-${index}`).textContent = formatCurrency(itemTotalCost);
+    if(document.getElementById(`item-bdi-adopted-${index}`)) document.getElementById(`item-bdi-adopted-${index}`).textContent = formatNumber(currentBdiFinalAdotado, 2) + "%";
+    if(document.getElementById(`item-sell-price-${index}`)) document.getElementById(`item-sell-price-${index}`).textContent = formatCurrency(itemSellPrice);
+    if(document.getElementById(`item-total-hh-prof-${index}`)) document.getElementById(`item-total-hh-prof-${index}`).textContent = formatNumber(itemTotalHHProf);
+    if(document.getElementById(`item-total-hh-helper-${index}`)) document.getElementById(`item-total-hh-helper-${index}`).textContent = formatNumber(itemTotalHHHelper);
+    if(document.getElementById(`item-total-weight-${index}`)) document.getElementById(`item-total-weight-${index}`).textContent = formatNumber(itemTotalWeight);
+            
+    const row = budgetItemsTableBody.querySelector(`tr[data-index='${index}']`);
+    if (row) row.setAttribute('data-total-cost', itemTotalCost.toString()); 
+}
+
+export function calculateGrandTotals() {
+    if (!grandTotalMaterialCell) {
+        // console.warn("calculateGrandTotals: Elementos de totais não encontrados no DOM.");
+        return; 
+    }
+    const budgetDataItems = getBudgetData();
+    let curGTMat = 0, curGTLab = 0, curGTCost = 0, curGTSell = 0, 
+        curGTHHProf = 0, curGTHHHelp = 0, curGTWeight = 0;
+
+    budgetDataItems.forEach((item) => {
+        const qty = item.initialQuantity; 
+        curGTMat += qty * (item.unitCostMaterial || 0);
+        curGTLab += qty * (item.unitCostLabor || 0);
+        if (item.professionals) for (const p in item.professionals) curGTHHProf += (item.professionals[p] || 0) * qty;
+        if (item.helpers) for (const h in item.helpers) curGTHHHelp += (item.helpers[h] || 0) * qty;
+        curGTWeight += qty * (item.unitWeight || 0);
+    });
+    curGTCost = curGTMat + curGTLab;
+    const currentBdiFinalAdotado = getBdiFinalAdotado();
+    curGTSell = curGTCost * (1 + (currentBdiFinalAdotado / 100));
+
+    grandTotalMaterialCell.textContent = formatCurrency(curGTMat);
+    grandTotalLaborCell.textContent = formatCurrency(curGTLab);
+    grandTotalCostCell.textContent = formatCurrency(curGTCost);
+    grandTotalSellPriceCell.textContent = formatCurrency(curGTSell);
+    grandTotalHHProfCell.textContent = formatNumber(curGTHHProf);
+    grandTotalHHHelperCell.textContent = formatNumber(curGTHHHelp);
+    grandTotalWeightCell.textContent = formatNumber(curGTWeight);
+}
+
+function handleQuantityChange(event) {
+    const input = event.target;
+    const rowIndex = parseInt(input.closest('tr').dataset.index, 10);
+    
+    // O valor já deve estar formatado com ponto pelo validateNumberInput no blur
+    // ou ser um valor parcial durante a digitação. parseFloatStrict lida com ambos.
+    const numericValue = parseFloatStrict(input.value); // parseFloatStrict lida com '.' ou ','
+    updateBudgetItemQuantity(rowIndex, numericValue); 
+
+    calculateSingleRow(rowIndex); 
+    calculateGrandTotals(); 
+    if (recalculateAllSimulationsCallback) recalculateAllSimulationsCallback();
+}
+
+export function populateAndCalculateTable() {
+    // console.log("calculadora.js: populateAndCalculateTable chamada");
+    const budgetDataItems = getBudgetData();
+    if (!budgetItemsTableBody) {
+        console.error("budgetItemsTableBody não está definido. A tabela não pode ser populada.");
+        return;
+    }
+    budgetItemsTableBody.innerHTML = '';
+    budgetDataItems.forEach((item, index) => {
+        item.unitCostLabor = calculateItemUnitLaborCost(item); 
+        item.unitCostMaterial = calculateItemUnitMaterialCost(item);
+        const custoItemTotalUnit = item.unitCostMaterial + item.unitCostLabor;
+
+        const row = budgetItemsTableBody.insertRow();
+        row.setAttribute('data-index', index.toString());
+        row.setAttribute('data-description', item.description);
+        row.setAttribute('data-category', item.categoria);
+
+        const quantityInputId = `quantity-${index}`;
+        const quantityErrorMsgId = `${quantityInputId}-error-msg`;
+
+        row.innerHTML = `
+            <td class="item-description col-identificacao">${item.description}</td>
+            <td class="unit-measure col-identificacao">${item.refComposition}</td>
+            <td class="unit-measure col-identificacao">${item.unit}</td>
+            <td class="col-quantidade">
+                <input type="number" id="${quantityInputId}" value="${item.initialQuantity.toFixed(2)}" 
+                       min="0" step="0.01" class="quantity-input" 
+                       aria-label="Quantidade para ${item.description}"
+                       aria-describedby="${quantityErrorMsgId}">
+                <span id="${quantityErrorMsgId}" class="validation-message" aria-live="polite"></span>
+            </td>
+            <td class="currency col-custo-unit" id="unit-material-cost-${index}">${formatCurrency(item.unitCostMaterial)}</td>
+            <td class="currency col-custo-unit" id="unit-labor-cost-${index}">${formatCurrency(item.unitCostLabor)}</td>
+            <td class="currency font-semibold col-custo-unit td-borda-custo-unit-total" id="unit-total-cost-${index}">${formatCurrency(custoItemTotalUnit)}</td>
+            <td id="item-total-material-${index}" class="currency col-custo-total">R$ 0,00</td>
+            <td id="item-total-labor-${index}" class="currency col-custo-total">R$ 0,00</td>
+            <td id="item-total-cost-${index}" class="currency font-bold col-custo-total td-borda-custo-item-total">R$ 0,00</td>
+            <td id="item-bdi-adopted-${index}" class="number-value col-bdi">0,00%</td>
+            <td id="item-sell-price-${index}" class="currency font-bold col-bdi td-borda-preco-venda-item">R$ 0,00</td>
+            <td id="item-total-hh-prof-${index}" class="number-value col-produtividade">0,00</td>
+            <td id="item-total-hh-helper-${index}" class="number-value col-produtividade">0,00</td>
+            <td id="item-total-weight-${index}" class="number-value col-peso">0,00</td>`;
+        
+        const quantityInput = row.querySelector(`#${quantityInputId}`);
+        if (quantityInput) {
+            quantityInput.addEventListener('input', handleQuantityChange);
+            quantityInput.addEventListener('blur', (event) => {
+                const validatedQty = validateNumberInput(event.target, 0, Infinity, 2, quantityErrorMsgId);
+                const budgetData = getBudgetData();
+                if (budgetData[index] && validatedQty !== budgetData[index].initialQuantity) {
+                     updateBudgetItemQuantity(index, validatedQty);
+                }
+                handleQuantityChange(event); // Recalcula com o valor possivelmente corrigido
+            });
+        }
+    });
+    calculateAllRowsAndGrandTotals(); 
+    if(populateCategoryFilterCallback && applySearchAndCategoryFilterCallback) {
+        populateCategoryFilterCallback(applySearchAndCategoryFilterCallback);
+    }
+}
+
+export function calculateAllRowsAndGrandTotals() {
+    const budgetDataItems = getBudgetData();
+    budgetDataItems.forEach((item, index) => {
+        calculateSingleRow(index);
+    });
+    calculateGrandTotals();
+}
